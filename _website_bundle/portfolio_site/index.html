@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EPC 报销提报机器人 | AI Agent Case Study</title>
+  <style>
+    :root {
+      --ink: #0d1b2a;
+      --muted: #5f6f82;
+      --line: #dce5ee;
+      --navy: #102a43;
+      --blue: #1779d4;
+      --cyan: #23c4d9;
+      --mint: #e6fbf8;
+      --sky: #edf6ff;
+      --paper: #f7fafc;
+      --card: #ffffff;
+      --green: #0f8b6d;
+      --gold: #a46a00;
+      --shadow: 0 18px 45px rgba(16, 42, 67, .11);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; color: var(--ink); background: var(--paper); line-height: 1.72; }
+    a { color: inherit; text-decoration: none; }
+    .nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 14px max(24px, calc((100vw - 1120px)/2)); background: rgba(247,250,252,.88); border-bottom: 1px solid rgba(220,229,238,.9); backdrop-filter: blur(14px); }
+    .brand { font-weight: 800; letter-spacing: .02em; }
+    .nav-links { display: flex; gap: 18px; color: var(--muted); font-size: 14px; }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    .hero { padding: 88px 0 68px; background: radial-gradient(circle at 82% 20%, rgba(35,196,217,.22), transparent 28%), linear-gradient(135deg,#eff8ff 0%,#f7fafc 58%,#eafbf8 100%); }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+    .eyebrow { display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 99px; color: var(--blue); background: #e6f2ff; font-size: 13px; font-weight: 700; }
+    h1 { font-size: clamp(40px, 6vw, 68px); line-height: 1.08; letter-spacing: -.045em; margin: 18px 0; color: var(--navy); }
+    h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.2; margin: 0 0 16px; color: var(--navy); }
+    h3 { font-size: 19px; margin: 0 0 8px; color: var(--navy); }
+    .lead { color: #405166; font-size: 18px; max-width: 650px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .chip { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 7px 12px; font-size: 13px; color: #405166; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .button { border: 0; border-radius: 10px; padding: 12px 18px; background: var(--blue); color: #fff; cursor: pointer; font-weight: 700; font-size: 14px; }
+    .button.secondary { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    .hero-card { border: 1px solid #cbdceb; border-radius: 22px; padding: 20px; background: #102a43; color: #eaf4ff; box-shadow: var(--shadow); transform: rotate(1.2deg); }
+    .window-bar { display: flex; gap: 6px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,.12); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #6c8aa6; }
+    .hero-card h3 { color: #fff; margin-top: 18px; }
+    .hero-card p { color: #b9d4ee; font-size: 14px; }
+    .flow-mini { display: grid; grid-template-columns: 1fr 22px 1fr 22px 1fr; align-items: center; margin-top: 18px; gap: 8px; }
+    .flow-mini .box { min-height: 84px; border-radius: 12px; padding: 12px; background: rgba(255,255,255,.08); font-size: 12px; }
+    .flow-mini .arrow { color: var(--cyan); text-align: center; font-size: 18px; }
+    section { padding: 84px 0; }
+    section.alt { background: #fff; }
+    .section-intro { max-width: 760px; color: var(--muted); font-size: 17px; margin-bottom: 34px; }
+    .problem-grid, .decision-grid, .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .snapshot-grid, .module-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .snapshot-card { border: 1px solid var(--line); background: #fff; border-radius: 14px; padding: 18px; }
+    .snapshot-card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .snapshot-card strong { display: block; color: var(--navy); font-size: 17px; line-height: 1.45; }
+    .contribution { display: grid; grid-template-columns: 1.05fr .95fr; gap: 20px; margin-top: 24px; }
+    .contribution-panel { border-radius: 16px; padding: 24px; background: #fff; border: 1px solid var(--line); }
+    .contribution-panel.dark { background: var(--navy); border-color: var(--navy); color: #dceaf7; }
+    .contribution-panel.dark h3 { color: #fff; }
+    .contribution-panel ul { margin: 12px 0 0; padding-left: 20px; }
+    .contribution-panel li { margin: 8px 0; font-size: 14px; }
+    .rule-case { display: grid; grid-template-columns: .95fr 1.05fr; gap: 22px; align-items: stretch; }
+    .rule-input, .rule-output { border-radius: 16px; padding: 22px; border: 1px solid var(--line); }
+    .rule-input { background: #0f1e2e; color: #d9edf7; font-family: Consolas, monospace; font-size: 13px; line-height: 1.8; }
+    .rule-output { background: #fff; }
+    .rule-output-row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid #edf2f7; font-size: 14px; }
+    .rule-output-row:last-child { border-bottom: 0; }
+    .rule-output-row b { color: var(--green); }
+    .module-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    .module-card .number { margin-bottom: 8px; }
+    .module-card p { color: var(--muted); margin: 0; font-size: 13px; }
+    .next-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .next-grid .card { border-top: 3px solid var(--cyan); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+    .number { color: var(--blue); font-weight: 800; font-size: 13px; letter-spacing: .08em; }
+    .architecture { border: 1px solid var(--line); border-radius: 20px; background: #fff; padding: 28px; overflow-x: auto; }
+    .arch-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 5px; }
+    .demo { display: grid; grid-template-columns: 310px 1fr; min-height: 520px; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; background: #fff; box-shadow: var(--shadow); }
+    .demo-side { padding: 24px; background: #102a43; color: #d9eafa; }
+    .demo-side h3 { color: #fff; }
+    .demo-side p { color: #b9d4ee; font-size: 14px; }
+    .step-list { margin: 20px 0; padding: 0; list-style: none; }
+    .step-list li { display: flex; gap: 10px; align-items: center; padding: 10px 0; color: #a8c3dc; font-size: 14px; }
+    .step-list li.active { color: #fff; font-weight: 700; }
+    .step-dot { width: 20px; height: 20px; border: 1px solid #6f93b3; border-radius: 50%; display: grid; place-items: center; font-size: 11px; }
+    .step-list li.active .step-dot { background: var(--cyan); border-color: var(--cyan); color: #102a43; }
+    .demo-main { padding: 28px; }
+    .demo-top { display: flex; justify-content: space-between; gap: 16px; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+    .demo-label { font-size: 13px; color: var(--muted); }
+    .demo-stage { padding-top: 22px; }
+    .actual-demo { display: grid; grid-template-columns: 270px 1fr; min-height: 500px; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; background: #fff; box-shadow: var(--shadow); }
+    .actual-demo-nav { padding: 24px; background: #102a43; color: #d9eafa; }
+    .actual-demo-nav h3 { color: #fff; }
+    .actual-demo-nav p { color: #b9d4ee; font-size: 13px; }
+    .actual-shot-wrap { padding: 24px; }
+    .actual-shot { margin: 0; }
+    .actual-shot img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .actual-shot figcaption { padding-top: 12px; color: var(--muted); font-size: 14px; }
+    .workspace-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding: 14px 16px; background: #f8fbff; border: 1px solid #d7e5f5; border-radius: 12px; }
+    .workspace-header b { color: var(--navy); }
+    .workspace-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .workspace-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+    .ghost-action { color: var(--blue); border: 1px solid #a9cbed; border-radius: 7px; padding: 5px 8px; font-size: 11px; background: #fff; }
+    .demo-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 15px 0 17px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+    .demo-tab { padding: 7px 10px; font-size: 12px; border-radius: 7px; color: #536579; }
+    .demo-tab.active { background: #e8f2ff; color: var(--blue); font-weight: 700; }
+    .workspace-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .workspace-metric { border: 1px solid var(--line); border-radius: 10px; padding: 11px; background: #fff; }
+    .workspace-metric span { display:block; color: var(--muted); font-size: 11px; }
+    .workspace-metric b { display:block; margin-top: 5px; font-size: 17px; color: var(--navy); }
+    .actual-form-section { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fff; margin-top: 14px; }
+    .actual-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-weight: 700; color: var(--navy); }
+    .actual-form-head span { color: var(--blue); font-size: 13px; }
+    .actual-table { display: grid; gap: 1px; border: 1px solid #dce5ee; background: #dce5ee; }
+    .actual-table-row { display: grid; grid-template-columns: 1.15fr 1.4fr .8fr .8fr .85fr .65fr 1fr; gap: 1px; background: #fff; }
+    .actual-table-row.payee { grid-template-columns: 1.3fr 1.3fr .9fr .55fr; }
+    .actual-table-cell { min-height: 40px; padding: 8px; display: flex; align-items: center; background: #fff; font-size: 12px; }
+    .actual-table-row.header .actual-table-cell { min-height: 32px; background: #f4f7fb; color: #536579; font-weight: 700; }
+    .fake-input { width: 100%; padding: 5px 7px; border: 1px solid #bfd4ec; border-radius: 6px; background: #fff; color: #22384f; }
+    .fake-input.select::after { content: '⌄'; float: right; color: #6f8194; }
+    .parse-board { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 10px; }
+    .parse-column { min-height: 275px; border: 1px solid var(--line); border-radius: 10px; padding: 13px; background: #fff; }
+    .parse-column.dark { background: #102a43; border-color: #102a43; color: #dbeafa; }
+    .parse-column h4 { margin: 0 0 10px; font-size: 13px; color: var(--navy); }
+    .parse-column.dark h4 { color: #fff; }
+    .parse-line { padding: 8px 0; border-bottom: 1px solid rgba(132,160,188,.24); font-size: 12px; }
+    .parse-line:last-child { border-bottom: 0; }
+    .parse-tag { display: inline-block; padding: 2px 6px; margin-right: 5px; border-radius: 99px; color: #0a6b60; background: #dff8f4; font-size: 10px; font-weight: 700; }
+    .parse-tag.blue { color: #1d5f9b; background: #e8f2ff; }
+    .parse-tag.warn { color: #8a5b00; background: #fff4d8; }
+    .match-board { display: grid; gap: 8px; }
+    .match-row { display: grid; grid-template-columns: 95px 1fr 105px; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; font-size: 12px; background: #fff; }
+    .match-row b { color: var(--navy); }
+    .match-score { justify-self: end; font-weight: 700; }
+    .match-score.ok { color: var(--green); }
+    .match-score.review { color: var(--gold); }
+    .match-score.block { color: #c0392b; }
+    .run-panel { margin-top: 14px; border: 1px solid #cfe0ef; border-radius: 12px; background: #f8fbff; padding: 14px; }
+    .run-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+    .run-badge { border-radius: 99px; padding: 5px 9px; color: #fff; background: #1779d4; font-size: 12px; font-weight: 700; }
+    .run-badge.wait { background: #a46a00; }
+    .run-badge.done { background: #0f8b6d; }
+    .run-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .run-action { border: 1px solid #a9cbed; background: #fff; color: var(--blue); border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 12px; }
+    .run-track { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin: 14px 0; }
+    .run-step { min-height: 62px; padding: 8px; border-radius: 9px; border: 1px solid #dce5ee; background: #fff; color: #6a7a8b; font-size: 11px; }
+    .run-step strong { display: block; color: #405166; margin-bottom: 4px; font-size: 11px; }
+    .run-step.done { border-color: #bde3d8; background: #effaf6; color: #0f8b6d; }
+    .run-step.active { border-color: #8cbce9; background: #eaf4ff; color: #1779d4; }
+    .run-step.wait { border-color: #efd69b; background: #fff9e9; color: #a46a00; }
+    .run-log { margin: 0; padding: 11px; border-radius: 8px; background: #102a43; color: #cde3f6; font: 11px/1.75 Consolas, monospace; white-space: pre-wrap; }
+    .raw-sheet { display: grid; gap: 7px; padding: 16px; background: #f7fafc; border: 1px solid var(--line); border-radius: 12px; font-family: Consolas, monospace; font-size: 13px; color: #46576a; }
+    .sheet-row { display: grid; grid-template-columns: 1.2fr 1fr .7fr .7fr; gap: 8px; }
+    .sheet-row.header { color: #1c5f97; font-weight: 700; }
+    .json-box { background: #0f1e2e; color: #d8f3f0; border-radius: 12px; padding: 18px; font: 12px/1.7 Consolas, monospace; white-space: pre-wrap; }
+    .reimbursement-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    .fee-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .fee-card .tag { font-size: 12px; color: var(--blue); font-weight: 700; }
+    .fee-card strong { display: block; margin-top: 6px; font-size: 22px; }
+    .fee-card small { color: var(--muted); display: block; margin-top: 4px; }
+    .check-list { display: grid; gap: 10px; }
+    .check { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 10px; background: #f7fafc; border: 1px solid var(--line); font-size: 14px; }
+    .check b { color: var(--green); }
+    .demo-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .demo-shot { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 12px 28px rgba(16,42,67,.08); }
+    .demo-shot img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); }
+    .demo-shot figcaption { padding: 14px 16px 16px; color: var(--muted); font-size: 14px; }
+    .demo-shot strong { display: block; color: var(--navy); margin-bottom: 3px; }
+    .live-demo-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid #cfe0ef; background: #f8fbff; border-radius: 12px; }
+    .live-demo-toolbar p { margin: 0; color: var(--muted); font-size: 13px; }
+    .live-demo-link { color: #fff; background: var(--blue); border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; }
+    .live-frame { width: 100%; height: 850px; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: var(--shadow); }
+    .ui-mock { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .mock-panel { border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 18px; }
+    .mock-head { display: flex; justify-content: space-between; margin-bottom: 16px; font-weight: 700; }
+    .input-line { height: 34px; border-radius: 7px; background: #f1f5f9; margin: 10px 0; position: relative; overflow: hidden; }
+    .input-line::after { content: ""; position: absolute; left: 10px; right: 35%; top: 13px; height: 7px; border-radius: 5px; background: #cbd5e1; }
+    .payee-row { display: grid; grid-template-columns: 1fr 80px 70px; gap: 8px; padding: 9px 0; border-top: 1px solid #edf2f7; font-size: 13px; }
+    .payee-row .ok { color: var(--green); font-weight: 700; }
+    .safe { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: center; }
+    .safety-list { display: grid; gap: 12px; }
+    .safety-list div { padding: 13px 15px; border-left: 3px solid var(--cyan); background: #f7fbfd; color: #405166; font-size: 14px; }
+    .asset-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .asset { padding: 14px; border: 1px dashed #b9c8d7; border-radius: 12px; background: #fff; font-size: 14px; color: #536579; }
+    footer { padding: 40px 0 56px; background: #102a43; color: #c3d8ea; }
+    footer strong { color: #fff; }
+    @media (max-width: 820px) {
+      .hero-grid, .demo, .actual-demo, .safe { grid-template-columns: 1fr; }
+      .problem-grid, .decision-grid, .result-grid, .snapshot-grid, .module-grid, .next-grid { grid-template-columns: 1fr; }
+      .demo-side { min-height: auto; }
+      .ui-mock, .asset-list, .demo-gallery, .contribution, .rule-case, .parse-board { grid-template-columns: 1fr; }
+      .workspace-metrics { grid-template-columns: repeat(2, 1fr); }
+      .actual-table-row, .actual-table-row.payee { grid-template-columns: 1fr 1fr; }
+      .run-track { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="#top">EPC Submission Agent</a>
+    <div class="nav-links">
+      <a href="#snapshot">概览</a><a href="#problem">问题</a><a href="#solution">方案</a><a href="#rule-case">规则案例</a><a href="#demo">Demo</a><a href="#live-demo">运行截图</a><a href="#build">交付物</a>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow">AI AGENT · WORKFLOW AUTOMATION</span>
+          <h1>把杂乱签到表<br>变成可审核的 EPC 申请</h1>
+          <p class="lead">一个面向内部报销场景的 AI Agent：先用业务规则和结构化 JSON 解决理解问题，再用浏览器自动化完成可复核的 EPC 填报。</p>
+          <div class="chips"><span class="chip">Codex Skill</span><span class="chip">Structured JSON</span><span class="chip">Flask</span><span class="chip">Playwright</span><span class="chip">Human-in-the-loop</span></div>
+          <div class="cta-row"><a class="button" href="#demo">体验脱敏 Demo</a><a class="button secondary" href="assets/EPC报销提报机器人_作品集.pdf">下载 PDF Case Study</a></div>
+        </div>
+        <div class="hero-card">
+          <div class="window-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <h3>从表格到提报，不让 AI 直接“瞎填”</h3>
+          <p>核心策略：AI 只负责理解和生成 JSON；所有金额、收款人与浏览器操作都必须经过规则校验和人工闸门。</p>
+          <div class="flow-mini">
+            <div class="box">原始签到表<br><b>人员、金额、备注混杂</b></div><div class="arrow">→</div>
+            <div class="box">规则 + AI<br><b>标准 JSON 草稿</b></div><div class="arrow">→</div>
+            <div class="box">EPC 执行器<br><b>填报并回读核验</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="snapshot" class="alt">
+      <div class="wrap">
+        <h2>项目概览：从业务问题到可运行系统</h2>
+        <p class="section-intro">这是一个个人主导、持续迭代的 AI 自动化项目。重点不是“调用一个模型”，而是把规则、数据、审核和执行组织成可靠的端到端工作流。</p>
+        <div class="snapshot-grid">
+          <div class="snapshot-card"><span>我的角色</span><strong>项目设计与工程实现</strong></div>
+          <div class="snapshot-card"><span>迭代周期</span><strong>2026.06 - 2026.08</strong></div>
+          <div class="snapshot-card"><span>主要场景</span><strong>内部报销提报与收款人核验</strong></div>
+          <div class="snapshot-card"><span>交付形态</span><strong>Skill、Web、浏览器执行器、分发包</strong></div>
+        </div>
+        <div class="contribution">
+          <article class="contribution-panel">
+            <h3>我负责的工作</h3>
+            <ul>
+              <li>将 EPC 业务规则拆成可维护的 Skill、费率表和费用说明模板。</li>
+              <li>设计统一 JSON Schema，让 AI 解析、前端审核和浏览器执行共享同一份数据。</li>
+              <li>实现 5000 前端批次工作台、草稿审核、状态管理和收款人差异处理。</li>
+              <li>实现 Playwright 填报、截图、回读核验、暂停/继续和恢复提示。</li>
+              <li>将当前版本拆成可分发的业务规则包、前端服务包和本地执行器包。</li>
+            </ul>
+          </article>
+          <article class="contribution-panel dark">
+            <h3>我刻意避免的风险</h3>
+            <ul>
+              <li>不让模型直接对 EPC 做最终提交。</li>
+              <li>不把显式金额静默改成“标准价”。</li>
+              <li>不共享 Edge 登录态、Cookie 或收款人敏感信息。</li>
+              <li>不把未知信息伪装成确定结论，而是显式输出待确认项。</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="problem">
+      <div class="wrap">
+        <h2>问题：报销不是“把数字填进去”</h2>
+        <p class="section-intro">真实签到表通常来自 Excel 或聊天记录。它们包含人员分段、金额、补贴、代收和备注，但不天然对应 EPC 的费用类目与收款人规则。</p>
+        <div class="problem-grid">
+          <article class="card"><div class="number">01 · INPUT</div><h3>输入不结构化</h3><p>姓名与手机号可能粘连；玩家、接口人、兼职混在一起；金额列没有完整表头；备注中还会出现鸽子、代收和补测。</p></article>
+          <article class="card"><div class="number">02 · RULES</div><h3>金额需要业务拆分</h3><p>玩家礼金、交通补贴、转介费、兼职场次费和餐补必须进入不同 EPC 类目，且收款人金额还要单独对账。</p></article>
+          <article class="card"><div class="number">03 · RISK</div><h3>自动化不能越权</h3><p>涉及收款人和费用信息，系统必须能暂停、解释差异、保留人工确认，而不是让模型直接提交。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="solution" class="alt">
+      <div class="wrap">
+        <h2>方案：规则驱动的 AI + 确定性执行</h2>
+        <p class="section-intro">我将系统拆成“业务规则、AI 解析、前端审核、本地执行器”四层，统一使用标准 JSON 作为唯一事实源。</p>
+        <div class="architecture">
+          <svg width="1040" height="320" viewBox="0 0 1040 320" role="img" aria-label="EPC 报销提报机器人架构图">
+            <defs>
+              <linearGradient id="blueBg" x1="0" x2="1"><stop stop-color="#eaf4ff"/><stop offset="1" stop-color="#e7fbf8"/></linearGradient>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6c8aa6"/></marker>
+            </defs>
+            <rect x="20" y="105" width="180" height="110" rx="16" fill="url(#blueBg)" stroke="#b8d2ec"/>
+            <text x="110" y="145" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="700" fill="#17365D">原始资料</text>
+            <text x="110" y="174" text-anchor="middle" font-family="Microsoft YaHei" font-size="13" fill="#536579">签到表 / Excel / 文本</text>
+            <line x1="205" y1="160" x2="300" y2="160" stroke="#6c8aa6" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="305" y="65" width="200" height="190" rx="16" fill="#102a43"/>
+            <text x="405" y="110" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="700" fill="#ffffff">规则 + AI 解析</text>
+            <text x="405" y="142" text-anchor="middle" font-family="Microsoft YaHei" font-size="13" fill="#c3d8ea">Skill / 费率表 / 类目映射</text>
+            <text x="405" y="173" text-anchor="middle" font-family="Microsoft YaHei" font-size="13" fill="#c3d8ea">人员分类 / 金额拆分</text>
+            <text x="405" y="204" text-anchor="middle" font-family="Microsoft YaHei" font-size="13" fill="#7fe8ed">warnings / assumptions</text>
+            <line x1="510" y1="160" x2="605" y2="160" stroke="#6c8aa6" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="610" y="105" width="190" height="110" rx="16" fill="#ffffff" stroke="#b8d2ec"/>
+            <text x="705" y="145" text-anchor="middle" font-family="Microsoft YaHei" font-size="18" font-weight="700" fill="#17365D">标准 JSON</text>
+            <text x="705" y="174" text-anchor="middle" font-family="Microsoft YaHei" font-size="13" fill="#536579">费用明细 / 收款人 / 总额</text>
+            <line x1="805" y1="160" x2="900" y2="160" stroke="#6c8aa6" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="905" y="65" width="115" height="190" rx="16" fill="#eafbf8" stroke="#a8ded7"/>
+            <text x="962" y="110" text-anchor="middle" font-family="Microsoft YaHei" font-size="17" font-weight="700" fill="#0f6b60">人机协同</text>
+            <text x="962" y="145" text-anchor="middle" font-family="Microsoft YaHei" font-size="12" fill="#3a6c67">前端审核</text>
+            <text x="962" y="170" text-anchor="middle" font-family="Microsoft YaHei" font-size="12" fill="#3a6c67">Edge 执行器</text>
+            <text x="962" y="195" text-anchor="middle" font-family="Microsoft YaHei" font-size="12" fill="#3a6c67">EPC 回读核验</text>
+          </svg>
+          <div class="arch-legend"><span><i class="legend-dot" style="background:#1779d4"></i>结构化数据流</span><span><i class="legend-dot" style="background:#23c4d9"></i>人工确认与安全闸门</span><span><i class="legend-dot" style="background:#102a43"></i>规则和 AI 推理层</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="rule-case">
+      <div class="wrap">
+        <h2>规则案例：一行兼职记录如何拆成三份数据</h2>
+        <p class="section-intro">这类细节决定了系统是否真的理解业务。下面是脱敏示例：同一行里的场次费、餐补和实际收款不能混为一谈。</p>
+        <div class="rule-case">
+          <div class="rule-input">原始记录（脱敏）
+
+Operator C    测试执行    2场
+餐补：1份
+实际应收：530元
+
+接口人 Alpha    转介：5人次
+应收：250元</div>
+          <div class="rule-output">
+            <h3>标准化后的业务结果</h3>
+            <div class="rule-output-row"><span>国内兼职 - 测试执行</span><b>2场 × 250 = 500元</b></div>
+            <div class="rule-output-row"><span>其他 - 餐饮费</span><b>1人次 × 30 = 30元</b></div>
+            <div class="rule-output-row"><span>第 2 页实际收款</span><b>500 + 30 = 530元</b></div>
+            <div class="rule-output-row"><span>国内玩家礼金 - 转介费</span><b>5人次 × 50 = 250元</b></div>
+            <p style="margin:14px 0 0;color:var(--muted);font-size:14px">系统同时保留“费用明细口径”和“收款人实际应收口径”，避免补贴漏算或重复计算。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo">
+      <div class="wrap">
+        <h2>工作台 Demo：按真实前端布局的静态交互</h2>
+        <p class="section-intro">左侧保持当前提报流程导航；右侧使用 5000 工作台的表单、tab、明细表和状态结构。所有操作只切换预设状态，不调用后端或执行真实提报。</p>
+        <div class="demo">
+          <aside class="demo-side">
+            <h3>当前提报流程</h3><p>批次任务、运行进度、单据概览、费用明细、收款人和标准 JSON 都有可点击的预设状态。</p>
+            <ul class="step-list" id="staticStepList">
+              <li class="active" data-step="0"><span class="step-dot">1</span>批次任务看板</li>
+              <li data-step="1"><span class="step-dot">2</span>运行中状态</li>
+              <li data-step="2"><span class="step-dot">3</span>费用明细</li>
+              <li data-step="3"><span class="step-dot">4</span>收款人规则</li>
+              <li data-step="4"><span class="step-dot">5</span>标准 JSON</li>
+            </ul>
+            <button class="button" id="staticPlayDemo">自动播放</button>
+          </aside>
+          <div class="demo-main">
+            <div class="demo-top"><div><b id="staticDemoTitle">批次任务看板</b><div class="demo-label" id="staticDemoHint">先看三张单的可执行状态、金额和风险摘要，再进入单据工作台。</div></div><span class="chip" id="staticStageChip">1 / 5</span></div>
+            <div class="demo-stage" id="staticDemoStage"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="parse-engine" class="alt">
+      <div class="wrap">
+        <h2>解析与匹配能力：后台规则引擎（非前端截图）</h2>
+        <p class="section-intro">这一部分展示的是系统在后台做的判断逻辑，不冒充为当前网页界面。它解释了为什么同一张签到表能被拆成可审核的数据，也解释了收款人为什么不会只靠姓名“盲配”。</p>
+        <div class="parse-board">
+          <div class="parse-column dark">
+            <h4>① 表格结构恢复</h4>
+            <div class="parse-line">清理合并单元格、空行、中文标点和粘连文本</div>
+            <div class="parse-line">识别玩家 / 接口人 / 兼职等分段切换</div>
+            <div class="parse-line">从同一行提取姓名、11 位手机号、数量、金额和备注</div>
+            <div class="parse-line">保留原始字段，避免模型“补写”不存在的数据</div>
+          </div>
+          <div class="parse-column">
+            <h4>② 规则与金额拆分</h4>
+            <div class="parse-line"><span class="parse-tag blue">显式优先</span>个人金额、单价、小计优先于费率表</div>
+            <div class="parse-line"><span class="parse-tag">双口径</span>兼职场次费、补贴与实际收款分别计算</div>
+            <div class="parse-line"><span class="parse-tag">类目</span>基础礼金、交通补贴、转介费、兼职、其他</div>
+            <div class="parse-line"><span class="parse-tag warn">假设</span>时长、稀缺性或难度缺失时输出待确认项</div>
+          </div>
+          <div class="parse-column">
+            <h4>③ 收款人双重确认</h4>
+            <div class="parse-line"><span class="parse-tag blue">1</span>手机号精确一致：自动匹配</div>
+            <div class="parse-line"><span class="parse-tag blue">2</span>规范化姓名一致：自动匹配</div>
+            <div class="parse-line"><span class="parse-tag warn">3</span>同手机号、不同姓名：提示确认</div>
+            <div class="parse-line"><span class="parse-tag warn">4</span>同音/一字差异：只给模糊候选，人工关联</div>
+            <div class="parse-line"><span class="parse-tag warn">5</span>同名不同手机号：高风险阻断，不自动填</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="live-demo">
+      <div class="wrap">
+        <h2>真实界面截图（脱敏）</h2>
+        <p class="section-intro">静态可点击工作台上方已经复刻了当前前端的交互结构。这里保留真实运行截图，作为页面字段、按钮和状态来自实际系统的佐证。</p>
+        <div class="demo-gallery">
+          <figure class="demo-shot"><img src="assets/demo-dashboard.png" alt="脱敏批次看板截图"><figcaption><strong>批次任务看板</strong>真实页面中的批次选择、状态统计、风险摘要和操作入口。</figcaption></figure>
+          <figure class="demo-shot"><img src="assets/demo-draft-review.png" alt="脱敏草稿工作台截图"><figcaption><strong>当前单据工作台</strong>真实页面中的单据概览、费用说明、收款人规则和执行进度。</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="engineering" class="alt">
+      <div class="wrap">
+        <h2>关键工程决策</h2>
+        <div class="decision-grid">
+          <article class="card"><div class="number">DECISION 01</div><h3>AI 不直接填表</h3><p>模型只负责生成可编辑 JSON。浏览器操作由确定性脚本执行，减少不可解释的高风险行为。</p></article>
+          <article class="card"><div class="number">DECISION 02</div><h3>显式金额优先</h3><p>签到表中的个人金额、数量和小计优先于费率表。标准价只用于补全缺失字段和发现冲突。</p></article>
+          <article class="card"><div class="number">DECISION 03</div><h3>不确定性可见化</h3><p>将风险拆成 warnings、missing、assumptions 和 error，阻止未确认数据直接进入 EPC。</p></article>
+        </div>
+        <div class="ui-mock" style="margin-top:30px">
+          <div class="mock-panel"><div class="mock-head"><span>草稿审核面板</span><span style="color:var(--gold)">2 个待确认项</span></div><div class="input-line"></div><div class="input-line"></div><div class="input-line"></div><div class="check-list"><div class="check"><b>✓</b> 费用明细合计 = 总报销金额</div><div class="check"><b>✓</b> 收款人合计 = 总报销金额</div><div class="check">⚠ 兼职工作难度待确认</div></div></div>
+          <div class="mock-panel"><div class="mock-head"><span>收款人回读核验</span><span style="color:var(--green)">已匹配</span></div><div class="payee-row"><b>Participant A</b><span>玩家</span><span class="ok">300 ✓</span></div><div class="payee-row"><b>Interface B</b><span>渠道接口人</span><span class="ok">250 ✓</span></div><div class="payee-row"><b>Operator C</b><span>兼职</span><span class="ok">530 ✓</span></div><div class="payee-row"><b>Proxy D</b><span>代收</span><span style="color:var(--gold)">待确认</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="build">
+      <div class="wrap">
+        <h2>端到端交付物</h2>
+        <p class="section-intro">为了让项目不是一次性 Demo，而是可交接、可复用的系统，我把能力拆成以下模块并保留明确边界。</p>
+        <div class="module-grid">
+          <article class="module-card"><div class="number">01 · RULE PACK</div><h3>业务规则包</h3><p>Skill、费率表、类目映射、费用说明模板和批量协议，指导 AI 如何拆分和校验。</p></article>
+          <article class="module-card"><div class="number">02 · REVIEW UI</div><h3>5000 前端工作台</h3><p>支持单笔/批量录入、草稿审核、warnings、状态管理、截图和收款人差异处理。</p></article>
+          <article class="module-card"><div class="number">03 · JSON CONTRACT</div><h3>标准数据契约</h3><p>统一费用明细、收款人规则、代收关系、总额、风险和假设，避免模块各算各的。</p></article>
+          <article class="module-card"><div class="number">04 · EXECUTOR</div><h3>本地 EPC 执行器</h3><p>使用用户自己的 Edge 登录态填写 EPC、回读核验，并在高风险节点暂停等待确认。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap safe">
+        <div><h2>结果：把业务流程变成可复用系统</h2><p class="section-intro">项目重点不在于虚构“节省多少时间”，而是把原本依赖个人经验的报销流程，变成可追踪、可审核、可复制的工作流。</p><div class="result-grid"><article class="card"><h3>统一规则</h3><p>将人员分类、金额拆分、类目映射和费用说明固化为可维护 Skill。</p></article><article class="card"><h3>双重对账</h3><p>同时校验费用明细总额和收款人总额，降低漏项与重复计算风险。</p></article><article class="card"><h3>人工闸门</h3><p>在成本归属、截图、名单差异和最终提交前保留明确确认。</p></article></div></div>
+        <div class="safety-list"><div><b>隐私优先：</b>作品集仅使用脱敏示例，不公开真实项目号、姓名、手机号、截图、内部链接或 Cookie。</div><div><b>可恢复：</b>批次、日志、截图和核验结果持久化；服务重启后不会假装继续旧浏览器任务。</div><div><b>可扩展：</b>业务规则、前端审核、AI 解析和浏览器执行器可以分别迭代。</div></div>
+      </div>
+    </section>
+
+    <section id="next" class="alt">
+      <div class="wrap">
+        <h2>如果要让其他同事也能安全使用，我会这样推进</h2>
+        <p class="section-intro">这不是“当前项目还没做完”的清单，而是从个人可用版本走向团队可用版本时，最实际的三件事。</p>
+        <div class="next-grid">
+          <article class="card"><div class="number">团队使用</div><h3>网页统一管理，浏览器仍在本地</h3><p>把 5000 前端和解析能力放到内网，让每个用户仍使用自己的 Edge 登录态执行 EPC，避免共享账号和 Cookie。</p></article>
+          <article class="card"><div class="number">稳定运行</div><h3>用历史脱敏案例做回归测试</h3><p>把玩家、接口人、兼职、代收、补贴和异常情况沉淀为测试集。以后修改规则时，先验证旧口径没有被改坏。</p></article>
+          <article class="card"><div class="number">可追溯</div><h3>记录“为什么这样填”</h3><p>保存规则版本、AI 假设、用户确认和失败原因。业务同事可以回看每一笔金额和每一个匹配决定。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="assets">
+      <div class="wrap">
+        <h2>演示图与可视化素材</h2>
+        <p class="section-intro">页面现在不仅有架构图和交互 Mock，也包含真实运行的脱敏工作台截图。下面展示费用拆分和收款人规则两个实际工作台视图。</p>
+        <div class="demo-gallery">
+          <figure class="demo-shot">
+            <img src="assets/demo-expense-breakdown.png" alt="脱敏费用明细工作台截图">
+            <figcaption><strong>费用明细工作台</strong>真实展示常规礼金、兼职费用和其他费用如何在前端被拆成可编辑子表。</figcaption>
+          </figure>
+          <figure class="demo-shot">
+            <img src="assets/demo-payee-rules.png" alt="脱敏收款人规则工作台截图">
+            <figcaption><strong>收款人规则工作台</strong>展示玩家默认金额、渠道接口人转介人数与兼职实际收款金额的分层管理。</figcaption>
+          </figure>
+          <figure class="demo-shot">
+            <img src="assets/demo-dashboard.png" alt="脱敏批次看板截图">
+            <figcaption><strong>批次状态看板</strong>快速判断单据是否可执行、当前应报金额和需要处理的风险摘要。</figcaption>
+          </figure>
+          <figure class="demo-shot">
+            <img src="assets/demo-draft-review.png" alt="脱敏草稿审核工作台截图">
+            <figcaption><strong>草稿审核工作台</strong>查看项目配置、费用说明、收款人规则和执行进度，作为进入 EPC 前的人工闸门。</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap"><strong>EPC 报销提报机器人</strong><p>Portfolio case study · AI Agent · Workflow Automation</p></div></footer>
+
+  <script>
+    const tabSteps = { '单据概览': 2, '费用明细': 3, '收款人': 4, '校验结果': 4, '标准 JSON': 5 };
+    function workspace(activeTab, body, status = '可执行') {
+      const tabs = ['单据概览', '费用明细', '收款人', '校验结果', '标准 JSON'];
+      const color = status === '填写中' ? '#1779d4' : status === '待确认' ? '#a46a00' : '#0f8b6d';
+      return `<div class="workspace-header"><div><b>当前单据工作台 ｜ DEMO-2608</b><div class="workspace-sub">单据编号：B20260820-001-01　状态：<span style="color:${color};font-weight:700">${status}</span></div></div><div class="workspace-actions"><span class="ghost-action" data-demo-go="2">保存草稿为 JSON</span><span class="ghost-action" data-demo-go="2">刷新本单</span><span class="ghost-action" data-demo-go="1">开始填报</span></div></div><div class="demo-tabs">${tabs.map(tab => `<span class="demo-tab ${tab === activeTab ? 'active' : ''}" data-demo-go="${tabSteps[tab]}">${tab}</span>`).join('')}</div>${body}`;
+    }
+    const stages = [
+      { title: '批次任务看板', hint: '预置 3 张演示单：一张可执行、一张正在填写、一张等待收款人确认。点击“查看草稿”或“开始”可切换预设状态。', chip: '1 / 6', html: `<div class="workspace-header"><div><b>批量提报 · 批次工作台</b><div class="workspace-sub">批次：B20260820-001　共 3 张演示单</div></div><div class="workspace-actions"><span class="ghost-action">刷新批次</span><span class="ghost-action">加载 Codex 批次草稿</span></div></div><div class="workspace-metrics" style="margin-top:14px"><div class="workspace-metric"><span>总单数</span><b>3</b></div><div class="workspace-metric"><span>可执行</span><b style="color:#0f8b6d">1</b></div><div class="workspace-metric"><span>执行中</span><b style="color:#1779d4">1</b></div><div class="workspace-metric"><span>等待确认</span><b style="color:#a46a00">1</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="payee-row"><b>DEMO-2608</b><span><span style="color:#0f8b6d;font-weight:700">可执行</span> · 尚未进入 EPC</span><span class="ok" data-demo-go="2">查看草稿</span></div><div class="payee-row"><b>DEMO-2609</b><span><span style="color:#1779d4;font-weight:700">填写中</span> · 第 1 页费用明细已填</span><span style="color:#1779d4" data-demo-go="1">查看进度</span></div><div class="payee-row"><b>DEMO-2610</b><span><span style="color:#a46a00;font-weight:700">等待确认</span> · 收款人差异待处理</span><span style="color:#a46a00" data-demo-go="4">处理差异</span></div></div>` },
+      { title: '运行中状态', hint: '模拟 DEMO-2609 正在填写第 1 页：系统记录每个步骤、截图和等待确认点，用户可以暂停或继续。', chip: '2 / 6', html: workspace('单据概览', `<div class="check-list"><div class="check"><b>✓</b> 打开 EPC 报销页并检测登录态</div><div class="check"><b>✓</b> 已填写发包序列、项目号、成本归属和费用说明</div><div class="check"><b>✓</b> 已勾选常规礼金、兼职和其他费用</div><div class="check" style="border-color:#a9cbed;background:#eef6ff">● 当前执行：填写“国内兼职”子表（2 / 3）</div><div class="check">⏳ 下一步：第 1 页截图后等待人工确认</div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>执行日志</span><span style="color:#1779d4">RUNNING</span></div><p style="margin:0;font:12px/1.8 Consolas,monospace;color:#536579">11:44:12  打开 EPC 报销页<br>11:44:15  已选择项目 DEMO-2609<br>11:44:18  已填费用说明<br>11:44:21  正在填写兼职费用...</p></div>`, '填写中') },
+      { title: '当前单据概览', hint: '模拟“单据概览”标签页：项目字段、人数分布、费用说明和校验结果汇总在这里。', chip: '3 / 6', html: workspace('单据概览', `<div class="workspace-metrics"><div class="workspace-metric"><span>项目编号</span><b>DEMO-2608</b></div><div class="workspace-metric"><span>成本归属</span><b>Demo Product</b></div><div class="workspace-metric"><span>收款人</span><b>24 人</b></div><div class="workspace-metric"><span>应报总额</span><b>7,920 元</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>收款人规则</span><span style="color:#0f8b6d">玩家 18 ｜ 接口人 2 ｜ 兼职 4</span></div><p style="margin:0;color:var(--muted);font-size:13px">玩家使用默认金额；接口人保留转介人数和应收金额；兼职收款金额包含场次费和餐补。</p></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>费用说明</span><span style="color:#0f8b6d">统一模板</span></div><p style="margin:0;font-size:13px;line-height:1.8">Demo Product 执行了 DEMO-2608 项目，共产生费用 7,920 元。玩家礼金、转介/接口人费用、测试执行费用和餐饮费用已分别生成。</p></div>` ) },
+      { title: '费用明细', hint: '模拟“费用明细”标签页：每一笔金额进入对应 EPC 子表，用户可查看数量、单价、类别和总额。', chip: '4 / 6', html: workspace('费用明细', `<div class="mock-panel"><div class="mock-head"><span>国内玩家礼金（常规）</span><span style="color:var(--blue)">总样本量 18</span></div><div class="rule-output-row"><span>基础礼金｜实验室测试/座谈会｜单日｜4小时</span><b>18 × 250 = 4,500 元</b></div><div class="rule-output-row"><span>交通补贴｜实验室测试/座谈会｜单日</span><b>18 × 50 = 900 元</b></div><div class="rule-output-row"><span>转介费｜8 人次｜单价 50</span><b>400 元</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>国内兼职</span><span style="color:var(--blue)">测试执行</span></div><div class="rule-output-row"><span>2~4小时/场｜8场｜场次单价 250</span><b>2,000 元</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>其他费用</span><span style="color:var(--blue)">餐饮费</span></div><div class="rule-output-row"><span>餐饮费｜4 人次｜单价 30</span><b>120 元</b></div></div>` ) },
+      { title: '收款人规则', hint: '模拟“收款人”标签页：玩家、渠道接口人和兼职分别维护，后续再进入手机号+姓名双重核验。', chip: '5 / 6', html: workspace('收款人', `<div class="mock-panel"><div class="mock-head"><span>玩家</span><span style="color:#0f8b6d">18 人 · 默认金额 300</span></div>${Array.from({length:4},(_,i)=>`<div class="payee-row"><b>Participant ${i+1}</b><span>手机号：已脱敏</span><span class="ok">300 元</span></div>`).join('')}<p style="margin:10px 0 0;color:var(--muted);font-size:12px">作品集仅展示前 4 条，真实工作台会完整列出全部收款人。</p></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>渠道接口人 / 转介</span><span style="color:#0f8b6d">8 人次</span></div><div class="payee-row"><b>Interface Alpha</b><span>5 人次</span><span class="ok">250 元</span></div><div class="payee-row"><b>Interface Beta</b><span>3 人次</span><span class="ok">150 元</span></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>兼职收款人</span><span style="color:#0f8b6d">4 人</span></div><div class="payee-row"><b>Operator 1 - 4</b><span>场次费 + 餐补</span><span class="ok">530 元/人</span></div></div>`, '待确认') },
+      { title: '标准 JSON', hint: '模拟“标准 JSON”标签页：执行器只读取已确认数据，不重新猜金额或改写业务规则。', chip: '6 / 6', html: workspace('标准 JSON', `<div class="json-box">{\n  "project_id": "DEMO-2608",\n  "gift_common": [\n    {"type":"基础礼金","amount":4500},\n    {"type":"交通补贴","amount":900},\n    {"type":"转介费","amount":400}\n  ],\n  "parttime": [{"work":"测试执行","count":8,"amount":2000}],\n  "other": [{"content":"餐饮费","count":4,"amount":120}],\n  "payee_rules": {"expected_total":24},\n  "grand_total": 7920,\n  "warnings": ["兼职工作难度待确认"]\n}</div>` ) }
+    ];
+    let active = 0, timer;
+    const stage = document.getElementById('demoStage');
+    const title = document.getElementById('demoTitle');
+    const hint = document.getElementById('demoHint');
+    const chip = document.getElementById('stageChip');
+    const items = [...document.querySelectorAll('#stepList li')];
+    function renderDemo(index){ active = index; const item = stages[index]; title.textContent=item.title; hint.textContent=item.hint; chip.textContent=item.chip; stage.innerHTML=item.html; items.forEach((el,i)=>el.classList.toggle('active',i===index)); stage.querySelectorAll('[data-demo-go]').forEach(el=>el.addEventListener('click',()=>{ clearInterval(timer); renderDemo(Number(el.dataset.demoGo)); })); }
+    if (stage && title && hint && chip && document.getElementById('playDemo')) {
+      items.forEach(el=>el.addEventListener('click',()=>{ clearInterval(timer); renderDemo(Number(el.dataset.step)); }));
+      document.getElementById('playDemo').addEventListener('click',()=>{ clearInterval(timer); renderDemo(0); timer=setInterval(()=>{ renderDemo((active+1)%stages.length); }, 1800); setTimeout(()=>clearInterval(timer), 11200); });
+      renderDemo(0);
+    }
+
+    const staticTabSteps = { '单据概览': 1, '费用明细': 2, '收款人': 3, '校验结果': 3, '标准 JSON': 4 };
+    function staticWorkspace(activeTab, body) {
+      const tabs = ['单据概览', '费用明细', '收款人', '校验结果', '标准 JSON'];
+      return `<div class="workspace-header"><div><b>当前单据工作台 ｜ DEMO-2608</b><div class="workspace-sub">单据编号：B20260820-001-01　当前状态：<span style="color:#0f8b6d;font-weight:700">可执行</span></div></div><div class="workspace-actions"><span class="ghost-action" data-static-go="1">保存草稿为 JSON 文件</span><span class="ghost-action" data-static-go="1">刷新本单</span><span class="ghost-action" data-static-go="2">开始填报</span></div></div><div class="demo-tabs">${tabs.map(tab => `<span class="demo-tab ${tab === activeTab ? 'active' : ''}" data-static-go="${staticTabSteps[tab]}">${tab}</span>`).join('')}</div>${body}`;
+    }
+    const staticStages = [
+      {
+        title: '批次任务看板', hint: '模拟当前批次工作台：状态、金额、风险摘要和“查看草稿”入口均为预设演示数据。', chip: '1 / 5',
+        html: `<div class="workspace-header"><div><b>批量提报 · 批次工作台</b><div class="workspace-sub">批次：B20260820-001　共 1 张演示单</div></div><div class="workspace-actions"><span class="ghost-action">刷新批次</span><span class="ghost-action">加载 Codex 批次草稿</span></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>原始资料</span><span style="color:var(--blue)">保存给 Codex 解析</span></div><div class="input-line"></div><div class="input-line"></div></div><div class="workspace-metrics" style="margin-top:14px"><div class="workspace-metric"><span>总单数</span><b>1</b></div><div class="workspace-metric"><span>可执行</span><b style="color:#0f8b6d">1</b></div><div class="workspace-metric"><span>等待确认</span><b>0</b></div><div class="workspace-metric"><span>需修正</span><b>0</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="payee-row"><b>DEMO-2608</b><span>应报 7,920 元</span><span class="ok" data-static-go="1">查看草稿</span></div><p style="margin:12px 0 0;color:var(--muted);font-size:13px">风险摘要：演示数据，不连接真实 EPC，不包含真实个人信息。</p></div>`
+      },
+      {
+        title: '当前单据概览', hint: '模拟“单据概览”标签页：可查看项目字段、人数分布、费用说明和当前校验状态。', chip: '2 / 5',
+        html: staticWorkspace('单据概览', `<div class="workspace-metrics"><div class="workspace-metric"><span>项目编号</span><b>DEMO-2608</b></div><div class="workspace-metric"><span>成本归属</span><b>Demo Product</b></div><div class="workspace-metric"><span>收款人</span><b>24 人</b></div><div class="workspace-metric"><span>应报总额</span><b>7,920 元</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>收款人规则</span><span style="color:#0f8b6d">玩家 18 ｜ 接口人 2 ｜ 兼职 4</span></div><p style="margin:0;color:var(--muted);font-size:13px">玩家使用默认金额；接口人保留转介人数和应收金额；兼职收款金额包含场次费和餐补。</p></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>费用说明</span><span style="color:#0f8b6d">统一模板</span></div><p style="margin:0;font-size:13px;line-height:1.8">Demo Product 执行了 DEMO-2608 项目，共产生费用 7,920 元。玩家礼金、转介/接口人费用、测试执行费用和餐饮费用已分别生成。</p></div><div class="check-list" style="margin-top:14px"><div class="check"><b>✓</b> 费用明细合计 = 总报销金额</div><div class="check"><b>✓</b> 收款人合计 = 总报销金额</div><div class="check">⚠ 兼职工作难度待确认</div></div>`)
+      },
+      {
+        title: '费用明细', hint: '模拟“费用明细”标签页：按 EPC 子表拆出常规礼金、兼职费用和其他费用。', chip: '3 / 5',
+        html: staticWorkspace('费用明细', `<div class="mock-panel"><div class="mock-head"><span>国内玩家礼金（常规）</span><span style="color:var(--blue)">总样本量 18</span></div><div class="rule-output-row"><span>基础礼金｜实验室测试/座谈会｜单日｜4小时</span><b>18 × 250 = 4,500 元</b></div><div class="rule-output-row"><span>交通补贴｜实验室测试/座谈会｜单日</span><b>18 × 50 = 900 元</b></div><div class="rule-output-row"><span>转介费｜8 人次｜单价 50</span><b>400 元</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>国内兼职</span><span style="color:var(--blue)">测试执行</span></div><div class="rule-output-row"><span>2~4小时/场｜8场｜场次单价 250</span><b>2,000 元</b></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>其他费用</span><span style="color:var(--blue)">餐饮费</span></div><div class="rule-output-row"><span>餐饮费｜4 人次｜单价 30</span><b>120 元</b></div></div>`)
+      },
+      {
+        title: '收款人规则', hint: '模拟“收款人”标签页：按玩家、渠道接口人和兼职分别维护应收金额和转介人数。', chip: '4 / 5',
+        html: staticWorkspace('收款人', `<div class="mock-panel"><div class="mock-head"><span>玩家</span><span style="color:#0f8b6d">18 人 · 默认金额 300</span></div>${Array.from({length:4},(_,i)=>`<div class="payee-row"><b>Participant ${i+1}</b><span>手机号：已脱敏</span><span class="ok">300 元</span></div>`).join('')}<p style="margin:10px 0 0;color:var(--muted);font-size:12px">作品集仅展示前 4 条，真实工作台会完整列出全部收款人。</p></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>渠道接口人 / 转介</span><span style="color:#0f8b6d">8 人次</span></div><div class="payee-row"><b>Interface Alpha</b><span>5 人次</span><span class="ok">250 元</span></div><div class="payee-row"><b>Interface Beta</b><span>3 人次</span><span class="ok">150 元</span></div></div><div class="mock-panel" style="margin-top:14px"><div class="mock-head"><span>兼职收款人</span><span style="color:#0f8b6d">4 人</span></div><div class="payee-row"><b>Operator 1 - 4</b><span>场次费 + 餐补</span><span class="ok">530 元/人</span></div></div>`)
+      },
+      {
+        title: '标准 JSON', hint: '模拟“标准 JSON”标签页：浏览器执行器只读取确认后的 JSON，不重新猜金额或重写业务规则。', chip: '5 / 5',
+        html: staticWorkspace('标准 JSON', `<div class="json-box">{\n  "project_id": "DEMO-2608",\n  "gift_common": [\n    {"type":"基础礼金","amount":4500},\n    {"type":"交通补贴","amount":900},\n    {"type":"转介费","amount":400}\n  ],\n  "parttime": [{"work":"测试执行","count":8,"amount":2000}],\n  "other": [{"content":"餐饮费","count":4,"amount":120}],\n  "payee_rules": {"expected_total":24},\n  "grand_total": 7920,\n  "warnings": ["兼职工作难度待确认"]\n}</div>`)
+      }
+    ];
+    let staticActive = 0, staticTimer;
+    const staticStage = document.getElementById('staticDemoStage');
+    const staticTitle = document.getElementById('staticDemoTitle');
+    const staticHint = document.getElementById('staticDemoHint');
+    const staticChip = document.getElementById('staticStageChip');
+    const staticItems = [...document.querySelectorAll('#staticStepList li')];
+    staticStages[1].title = '运行中状态';
+    staticStages[1].hint = '模拟 DEMO-2609 正在填写第 1 页：系统记录当前步骤、日志和下一个人工确认点。';
+
+    function addDemoRow(panel, project, statusText, statusColor, detail, actionText, target) {
+      const row = document.createElement('div');
+      row.className = 'payee-row';
+      const projectNode = document.createElement('b');
+      projectNode.textContent = project;
+      const detailNode = document.createElement('span');
+      const statusNode = document.createElement('span');
+      const actionNode = document.createElement('span');
+      statusNode.textContent = statusText + ' · ';
+      statusNode.style.color = statusColor;
+      statusNode.style.fontWeight = '700';
+      detailNode.append(statusNode, document.createTextNode(detail));
+      actionNode.textContent = actionText;
+      actionNode.style.color = statusColor;
+      actionNode.style.fontWeight = '700';
+      actionNode.dataset.staticGo = String(target);
+      row.append(projectNode, detailNode, actionNode);
+      panel.append(row);
+    }
+
+    function formCell(value) {
+      const cell = document.createElement('div');
+      cell.className = 'actual-table-cell';
+      const input = document.createElement('div');
+      input.className = 'fake-input';
+      input.textContent = value;
+      cell.append(input);
+      return cell;
+    }
+
+    function buildActualSection(title, badge, headers, rows, payee) {
+      const section = document.createElement('div');
+      section.className = 'actual-form-section';
+      const head = document.createElement('div');
+      head.className = 'actual-form-head';
+      const titleNode = document.createElement('span');
+      titleNode.style.color = '#102a43';
+      titleNode.style.fontSize = '16px';
+      titleNode.textContent = title;
+      const badgeNode = document.createElement('span');
+      badgeNode.textContent = badge;
+      head.append(titleNode, badgeNode);
+      const table = document.createElement('div');
+      table.className = 'actual-table';
+      const header = document.createElement('div');
+      header.className = 'actual-table-row header' + (payee ? ' payee' : '');
+      headers.forEach(value => {
+        const cell = document.createElement('div');
+        cell.className = 'actual-table-cell';
+        cell.textContent = value;
+        header.append(cell);
+      });
+      table.append(header);
+      rows.forEach(row => {
+        const line = document.createElement('div');
+        line.className = 'actual-table-row' + (payee ? ' payee' : '');
+        row.forEach(value => line.append(formCell(value)));
+        table.append(line);
+      });
+      section.append(head, table);
+      return section;
+    }
+
+    const runStates = [
+      {code:'QUEUED', label:'排队中', detail:'等待可用 EPC 浏览器标签页', tone:'', log:'11:44:00  单据已进入执行队列\n11:44:03  等待可用 EPC 标签页'},
+      {code:'RUNNING', label:'填写第 1 页', detail:'正在填写项目、费用说明和报销明细', tone:'', log:'11:44:12  打开 EPC 报销页\n11:44:15  已选择项目 DEMO-2609\n11:44:18  已填写费用说明\n11:44:21  正在填写兼职费用'},
+      {code:'WAITING_PAGE1_APPROVAL', label:'等待第 1 页确认', detail:'已截图，等待用户检查后继续', tone:'wait', log:'11:44:28  第 1 页填写完成并保存截图\n11:44:29  等待用户确认第 1 页内容'},
+      {code:'FILLING_PAYEES', label:'填写收款人', detail:'读取 EPC 名单并填写类型、金额', tone:'', log:'11:45:02  已进入收款人页\n11:45:04  正在匹配手机号和姓名\n11:45:08  正在填写收款人金额'},
+      {code:'VERIFYING_PAYEES', label:'收款人核验', detail:'回读类型、金额、支付宝字段和红色校验', tone:'', log:'11:45:14  回读收款人实际金额\n11:45:17  校验收款人合计\n11:45:20  检查支付宝登录号和实名'},
+      {code:'WAITING_PAGE2_APPROVAL', label:'等待核验确认', detail:'差异已处理，等待用户确认完成', tone:'wait', log:'11:45:25  收款人核验通过\n11:45:26  等待用户确认“核验无误”'},
+      {code:'COMPLETED', label:'提报完成', detail:'第 2 页核验完成，未自动最终提交', tone:'done', log:'11:45:31  本单填写完成\n11:45:31  EPC 标签页保留供人工复查'}
+    ];
+    let runStateIndex = 1;
+
+    function mountRunPanel() {
+      const panel = document.createElement('div');
+      panel.className = 'run-panel';
+      const head = document.createElement('div');
+      head.className = 'run-head';
+      const stateInfo = document.createElement('div');
+      const badge = document.createElement('span');
+      badge.className = 'run-badge';
+      const description = document.createElement('span');
+      description.style.marginLeft = '8px';
+      description.style.fontSize = '13px';
+      const actions = document.createElement('div');
+      actions.className = 'run-actions';
+      const previous = document.createElement('button');
+      previous.className = 'run-action';
+      previous.textContent = '上一步';
+      const next = document.createElement('button');
+      next.className = 'run-action';
+      next.textContent = '下一状态';
+      actions.append(previous, next);
+      stateInfo.append(badge, description);
+      head.append(stateInfo, actions);
+      const track = document.createElement('div');
+      track.className = 'run-track';
+      const log = document.createElement('pre');
+      log.className = 'run-log';
+      panel.append(head, track, log);
+
+      const render = () => {
+        const current = runStates[runStateIndex];
+        badge.textContent = current.code;
+        badge.className = 'run-badge' + (current.tone ? ' ' + current.tone : '');
+        description.textContent = current.detail;
+        previous.disabled = runStateIndex === 0;
+        next.disabled = runStateIndex === runStates.length - 1;
+        track.innerHTML = '';
+        runStates.forEach((state, index) => {
+          const item = document.createElement('div');
+          item.className = 'run-step' + (index < runStateIndex ? ' done' : index === runStateIndex ? (state.tone === 'wait' ? ' wait' : ' active') : '');
+          const code = document.createElement('strong');
+          code.textContent = state.code;
+          const label = document.createElement('span');
+          label.textContent = state.label;
+          item.append(code, label);
+          track.append(item);
+        });
+        log.textContent = current.log;
+      };
+      previous.addEventListener('click', () => { if (runStateIndex > 0) { runStateIndex -= 1; render(); } });
+      next.addEventListener('click', () => { if (runStateIndex < runStates.length - 1) { runStateIndex += 1; render(); } });
+      render();
+      staticStage.append(panel);
+    }
+
+    function decorateStaticState(index) {
+      if (index === 0) {
+        const values = staticStage.querySelectorAll('.workspace-metric b');
+        if (values.length >= 4) {
+          values[0].textContent = '3';
+          values[1].textContent = '1';
+          values[2].textContent = '1';
+          values[3].textContent = '1';
+        }
+        const panel = staticStage.querySelector('.mock-panel:last-child');
+        if (panel) {
+          const description = panel.querySelector('p');
+          if (description) description.textContent = '预设三张演示单：可执行、填写中和收款人待确认。点击右侧状态可切换到对应工作台状态。';
+          addDemoRow(panel, 'DEMO-2609', '填写中', '#1779d4', '第 1 页费用明细已填', '查看进度', 1);
+          addDemoRow(panel, 'DEMO-2610', '待确认', '#a46a00', '收款人差异待处理', '处理差异', 3);
+        }
+      }
+      if (index === 1) {
+        const status = staticStage.querySelector('.workspace-sub span');
+        if (status) {
+          status.textContent = '填写中';
+          status.style.color = '#1779d4';
+        }
+        mountRunPanel();
+      }
+      if (index === 2) {
+        staticStage.innerHTML = staticWorkspace('费用明细', '<div id="actualFormMount"></div>');
+        const mount = staticStage.querySelector('#actualFormMount');
+        mount.append(
+          buildActualSection('国内玩家礼金（常规）', '总样本量 18', ['礼金小类', '测试形式', '周期', '稀缺性', '时长', '样本量', '总金额'], [
+            ['基础礼金', '实验室测试/座谈会', '单日', '千万级', '4', '18', '4500'],
+            ['交通补贴', '实验室测试/座谈会', '单日', '-', '-', '18', '900'],
+            ['转介费', '实验室测试/座谈会', '单日', '-', '-', '8', '400']
+          ], false),
+          buildActualSection('国内兼职', '测试执行', ['工作类型', '工作难度', '场次/样本量', '标准单价', '总金额', '', ''], [
+            ['测试执行', '2~4小时/场', '8', '250', '2000', '', '']
+          ], false),
+          buildActualSection('其他费用', '餐饮费', ['发包内容', '数量', '单价', '总金额', '', '', ''], [
+            ['餐饮费', '4', '30', '120', '', '', '']
+          ], false)
+        );
+      }
+      if (index === 3) {
+        staticStage.innerHTML = staticWorkspace('收款人', '<div id="actualPayeeMount"></div>');
+        const mount = staticStage.querySelector('#actualPayeeMount');
+        mount.append(
+          buildActualSection('玩家', '默认金额 300 元', ['姓名', '手机号', '默认金额', '操作'], [
+            ['Participant 1', '138****1001', '300', '删除'],
+            ['Participant 2', '138****1002', '300', '删除'],
+            ['Participant 3', '138****1003', '300', '删除'],
+            ['Participant 4', '138****1004', '300', '删除']
+          ], true),
+          buildActualSection('渠道接口人 / 转介', '合计 8 人次', ['姓名', '转介人数', '收款金额', '操作'], [
+            ['Interface Alpha', '5', '250', '删除'],
+            ['Interface Beta', '3', '150', '删除']
+          ], true),
+          buildActualSection('兼职收款人', '4 人', ['姓名', '收款金额', '确认方式', '操作'], [
+            ['Operator 1', '530', '场次费 + 餐补', '删除'],
+            ['Operator 2', '530', '场次费 + 餐补', '删除']
+          ], true)
+        );
+      }
+    }
+    function renderStaticDemo(index){ staticActive = index; const item = staticStages[index]; staticTitle.textContent=item.title; staticHint.textContent=item.hint; staticChip.textContent=item.chip; staticStage.innerHTML=item.html; staticItems.forEach((el,i)=>el.classList.toggle('active',i===index)); decorateStaticState(index); staticStage.querySelectorAll('[data-static-go]').forEach(el=>el.addEventListener('click',()=>{ clearInterval(staticTimer); renderStaticDemo(Number(el.dataset.staticGo)); })); }
+    if (staticStage && staticTitle && staticHint && staticChip && document.getElementById('staticPlayDemo')) {
+      staticItems.forEach(el=>el.addEventListener('click',()=>{ clearInterval(staticTimer); renderStaticDemo(Number(el.dataset.step)); }));
+      document.getElementById('staticPlayDemo').addEventListener('click',()=>{ clearInterval(staticTimer); renderStaticDemo(0); staticTimer=setInterval(()=>{ renderStaticDemo((staticActive+1)%staticStages.length); }, 1800); setTimeout(()=>clearInterval(staticTimer), 9400); });
+      renderStaticDemo(0);
+    }
+  </script>
+  <script src="static_demo.js"></script>
+</body>
+</html>
