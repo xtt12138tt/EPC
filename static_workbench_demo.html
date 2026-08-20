@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>EPC 报销确认工作台</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f5f7fb; color:#25364d; font-family:"Microsoft YaHei",system-ui,sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:22px; }
+  h1 { text-align:center; color:#1769e0; margin:8px 0 20px; }
+  h3 { margin:18px 0 8px; }
+  .card { background:#fff; border:1px solid #e7ebf3; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(18,38,63,.05); }
+  .card h2 { margin:0 0 14px; font-size:16px; border-left:4px solid #1a73e8; padding-left:10px; }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .field { display:flex; flex-direction:column; min-width:0; }
+  .field label { font-size:12px; color:#697386; margin-bottom:5px; }
+  input, select, textarea { width:100%; padding:8px 10px; border:1px solid #d6dce8; border-radius:8px; font-size:14px; font-family:inherit; background:#fff; }
+  textarea { resize:vertical; line-height:1.55; }
+  button { border:0; border-radius:8px; padding:9px 16px; cursor:pointer; font-size:14px; background:#1a73e8; color:#fff; }
+  button.ghost { background:#fff; color:#1a73e8; border:1px solid #1a73e8; }
+  button.gray { background:#6b7280; }
+  button.danger { background:#dc3545; }
+  button.okbtn { background:#12805c; }
+  button.small { padding:4px 9px; font-size:12px; }
+  .btns { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th,td { border:1px solid #e1e7f0; padding:7px; text-align:left; vertical-align:middle; }
+  th { background:#f3f6ff; color:#41516a; font-weight:600; }
+  td input, td select { padding:5px 7px; border-radius:6px; }
+  .summary { background:#eef4ff; border:1px solid #d9e6ff; padding:12px; border-radius:10px; line-height:1.9; }
+  .checks { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .check { padding:9px 11px; border-radius:9px; border:1px solid #e5e7eb; background:#fafafa; font-size:13px; }
+  .check.ok { background:#ecfdf5; border-color:#bbf7d0; color:#166534; }
+  .check.warn { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .check.err { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+  .tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; }
+  .tag.blue { background:#e8f1ff; color:#1557b0; }
+  .tag.green { background:#e6f4ea; color:#137333; }
+  .tag.red { background:#fce8e6; color:#c5221f; }
+  .muted { color:#7b8794; font-size:12px; }
+  .hidden { display:none; }
+  details { margin-top:12px; }
+  summary { cursor:pointer; color:#1a73e8; font-weight:600; }
+  .json { margin-top:10px; background:#1f2330; color:#a6e3a1; padding:14px; border-radius:10px; font-family:Consolas,monospace; font-size:12px; white-space:pre-wrap; max-height:360px; overflow:auto; }
+  #log { background:#1f2330; color:#d5def2; padding:12px; border-radius:10px; font-family:Consolas,monospace; font-size:12px; height:240px; overflow:auto; white-space:pre-wrap; }
+  .log-prompt { color:#f9e2af; } .log-input { color:#89b4fa; } .log-error { color:#f38ba8; }
+  .shots { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .shots img { width:220px; border:2px solid #d0d5dd; border-radius:8px; cursor:pointer; }
+  .wait-box { background:#fff8e1; border:1px solid #ffe082; padding:12px; border-radius:10px; margin:10px 0; }
+  .wait-box .q { font-weight:700; margin-bottom:8px; }
+  .top-nav { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:-4px 0 18px; }
+  .top-nav a { color:#1a73e8; text-decoration:none; font-size:13px; }
+  .mode-intro { max-width:720px; margin:0 auto 20px; text-align:center; color:#697386; line-height:1.7; }
+  .mode-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; max-width:860px; margin:0 auto; }
+  .mode-card { display:block; padding:24px; border:1px solid #d9e6ff; border-radius:16px; background:#fff; color:#25364d; text-decoration:none; box-shadow:0 3px 12px rgba(18,38,63,.06); transition:.15s ease; }
+  .mode-card:hover { transform:translateY(-2px); border-color:#1a73e8; box-shadow:0 8px 18px rgba(26,115,232,.14); }
+  .mode-card h2 { color:#1769e0; margin:0 0 10px; font-size:19px; }
+  .mode-card p { color:#697386; line-height:1.7; margin:0; }
+  .status-grid { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:10px; margin:14px 0; }
+  .status-card { border:1px solid #e1e7f0; background:#fafcff; border-radius:10px; padding:10px; }
+  .status-card strong { display:block; font-size:20px; color:#1769e0; margin-top:3px; }
+  .status-card span { color:#697386; font-size:12px; }
+  .attention { background:#fff8e1; border:1px solid #ffe082; padding:12px; border-radius:10px; margin:10px 0; }
+  .attention ul { margin:8px 0 0; padding-left:20px; }
+  .issue-section { border-radius:10px; padding:12px 14px; margin-top:12px; }
+  .issue-section h3 { margin:0 0 8px; font-size:14px; }
+  .issue-section ul { margin:0; padding-left:19px; line-height:1.65; font-size:13px; }
+  .issue-section.required { background:#fff1f2; border:1px solid #fecdd3; color:#9f1239; }
+  .issue-section.possible { background:#fff8e7; border:1px solid #f6d88b; color:#8a5200; }
+  .issue-section.empty { background:#ecfdf5; border:1px solid #bbf7d0; color:#166534; font-size:13px; }
+  .batch-help { background:#eef4ff; color:#41516a; border:1px solid #d9e6ff; padding:10px 12px; border-radius:10px; font-size:13px; line-height:1.6; }
+  .batch-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin:14px 0 8px; }
+  .filter-group { display:flex; flex-wrap:wrap; gap:7px; }
+  .filter-btn { background:#fff; color:#526174; border:1px solid #d6dce8; padding:6px 11px; font-size:12px; }
+  .filter-btn.active { color:#1557b0; border-color:#1a73e8; background:#e8f1ff; font-weight:600; }
+  .order-table-wrap { overflow-x:auto; border:1px solid #dfe7f3; border-radius:12px; background:#fff; box-shadow:0 3px 12px rgba(32,64,104,.04); }
+  .order-table { min-width:920px; margin:0; border:0; }
+  .order-table th { padding:11px 12px; border:0; border-bottom:1px solid #dfe7f3; background:#f6f8fc; color:#56657a; font-size:12px; white-space:nowrap; }
+  .order-table td { padding:13px 12px; border:0; border-bottom:1px solid #edf1f7; vertical-align:top; }
+  .order-table tbody tr:last-child td { border-bottom:0; }
+  .order-table tbody tr:hover td { background:#fafcff; }
+  .order-ident { min-width:145px; }
+  .order-ident strong { display:block; color:#1f4e9a; font-size:14px; white-space:nowrap; }
+  .order-ident span { display:block; color:#7b8794; font-size:11px; margin-top:4px; white-space:nowrap; }
+  .order-status { width:105px; text-align:center; vertical-align:middle !important; }
+  .order-status .tag { white-space:nowrap; }
+  .order-progress { min-width:255px; max-width:340px; }
+  .order-progress-title { color:#3e4d63; font-weight:600; font-size:12px; margin-bottom:5px; }
+  .order-progress-text, .order-issue-text { color:#6b788b; font-size:12px; line-height:1.55; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+  .order-money { width:92px; white-space:nowrap; color:#223b63; font-weight:700; text-align:right; vertical-align:middle !important; }
+  .order-issue { min-width:185px; max-width:250px; }
+  .issue-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border-radius:999px; background:#fff4e8; color:#b45309; font-size:11px; font-weight:600; margin-bottom:6px; }
+  .issue-badge.clear { background:#edf9f1; color:#197340; }
+  .order-actions { min-width:175px; align-content:flex-start; }
+  .order-row-selected td { background:#f5f9ff; }
+  .order-actions { display:flex; flex-wrap:wrap; gap:5px; min-width:190px; }
+  .control-placeholder { opacity:.72; }
+  .order-workbench { border-color:#b9d3ff; }
+  .workbench-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; }
+  .workbench-head h2 { margin-bottom:5px !important; }
+  .workbench-subtitle { color:#697386; font-size:13px; line-height:1.6; }
+  .workbench-tabs { display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid #e5ebf5; margin-bottom:14px; }
+  .workbench-tab { background:transparent; color:#526174; border-radius:8px 8px 0 0; padding:8px 12px; font-size:13px; }
+  .workbench-tab.active { background:#eaf2ff; color:#1557b0; font-weight:600; }
+  .workbench-pane { display:none; }
+  .workbench-pane.active { display:block; }
+  .draft-meta { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+  .draft-meta-item { border:1px solid #e1e7f0; border-radius:9px; padding:9px 10px; background:#fafcff; }
+  .draft-meta-item span { display:block; color:#7b8794; font-size:12px; margin-bottom:4px; }
+  .draft-meta-item strong { font-size:14px; word-break:break-word; }
+  .draft-note { white-space:pre-wrap; background:#fafcff; border:1px solid #e1e7f0; border-radius:10px; padding:12px; line-height:1.7; font-size:13px; }
+  .empty-workbench { text-align:center; padding:28px 12px; color:#7b8794; }
+  #uiToast { position:fixed; right:22px; bottom:22px; max-width:360px; z-index:10; background:#25364d; color:#fff; border-radius:10px; padding:11px 14px; box-shadow:0 8px 24px rgba(18,38,63,.24); font-size:13px; }
+  @media(max-width:900px){ .grid,.checks{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:900px){ .mode-grid{grid-template-columns:1fr;} .status-grid{grid-template-columns:repeat(3,1fr);} .draft-meta{grid-template-columns:repeat(2,1fr);} }
+</style>
+
+<script>
+(() => {
+  const batchId = "B-DEMO-PORTFOLIO";
+  const draft = (projectId, total, stage) => ({
+    project_id: projectId,
+    fanbao_series: "研究",
+    fanbao_type: "用户调研",
+    cost_center: "Demo Product",
+    budget_owner: "演示负责人",
+    screenshot_required: false,
+    reimbursement_types: ["礼金(常规)", "兼职", "其他"],
+    gift_common: { total_sample: 18, rows: [
+      {"测试形式":"实验室测试/座谈会","连续周期":"单日","礼金小类":"基础礼金","样本稀缺性":"千万级","测试时长(小时)":4,"样本量":18,"总金额(元)":4500},
+      {"测试形式":"实验室测试/座谈会","连续周期":"单日","礼金小类":"交通补贴","样本量":18,"总金额(元)":900},
+      {"测试形式":"实验室测试/座谈会","连续周期":"单日","礼金小类":"转介费","样本量":8,"单价(元)":50,"总金额(元)":400}
+    ]},
+    parttime: { rows: [{"工作类型":"测试执行","工作难度":"2~4小时/场","测试场次/样本量":8,"总金额(元)":2000}] },
+    other: { rows: [{"发包内容":"餐饮费","数量":4,"总金额(元)":120}] },
+    payee_rules: {
+      expected_total: 24,
+      expected_breakdown: {"玩家":18,"渠道接口人":2,"兼职":4},
+      default_player_amount: 300,
+      known_players: Array.from({length:18}, (_, i) => "Participant " + (i + 1)),
+      known_phones: {},
+      specific: [
+        {"name":"Interface Alpha","type":"渠道接口人","amount":250,"referral_count":5},
+        {"name":"Interface Beta","type":"渠道接口人","amount":150,"referral_count":3},
+        {"name":"Operator 1","type":"兼职","amount":530},
+        {"name":"Operator 2","type":"兼职","amount":530},
+        {"name":"Operator 3","type":"兼职","amount":530},
+        {"name":"Operator 4","type":"兼职","amount":530}
+      ],
+      proxies: []
+    },
+    expense_note: "Demo Product执行了" + projectId + "项目，共产生费用" + total + "元，全部走EPC公账报销。\n详细报销内容为：\n\n【玩家礼金】5400元，共18名玩家参与实验室测试/座谈会，样本单价300元/人（基础礼金250+交通补贴50）。\n\n【转介/接口人费用】400元，2名渠道接口人协助玩家招募转介（合计8人次）。\n\n【兼职费用】2000元，明细为：测试执行共计8场，场次单价250元/场，共计8×250=2000元。\n\n【其他费用】120元，明细为：餐饮费共计4人次，单价30元/人次，共计4×30=120元。",
+    grand_total: total,
+    warnings: stage === "READY" ? ["演示数据：静态作品集预设状态，不连接真实 EPC。"] : [],
+    ai_parse_source: "portfolio static mock"
+  });
+
+  const orders = [
+    {order_id: batchId + "-01", batch_id: batchId, project_id: "DEMO-2608", status: "READY", current_step: "尚未进入 EPC 填写", warnings: ["演示数据：静态作品集预设状态。"], error: "", source_text: "脱敏签到表 A", meta: {}, draft: draft("DEMO-2608", 7920, "READY")},
+    {order_id: batchId + "-02", batch_id: batchId, project_id: "DEMO-2609", status: "RUNNING", current_step: "第 1 页费用明细填写中", warnings: [], error: "", source_text: "脱敏签到表 B", meta: {}, draft: draft("DEMO-2609", 5460, "RUNNING")},
+    {order_id: batchId + "-03", batch_id: batchId, project_id: "DEMO-2610", status: "WAITING_PAGE2_APPROVAL", current_step: "收款人差异等待确认", warnings: ["存在姓名模糊候选，需人工确认。"], error: "", source_text: "脱敏签到表 C", meta: {}, draft: draft("DEMO-2610", 3680, "WAITING_PAGE2_APPROVAL")}
+  ];
+  const events = [
+    {kind:"status",message:"READY：演示数据已就绪",created_at:"2026-08-20 11:44:12"},
+    {kind:"log",message:"已生成标准 JSON 草稿",created_at:"2026-08-20 11:44:16"},
+    {kind:"prompt",message:"第 1 页填写完成后等待确认",created_at:"2026-08-20 11:44:24"}
+  ];
+  const batch = () => ({batch_id: batchId, title: "脱敏作品集交互 Demo", status: "READY", created_at: "2026-08-20 11:44:00", updated_at: "2026-08-20 11:44:30", orders});
+  window.__portfolioDemo = {batchId, orders, batch};
+  const findOrder = (url) => orders.find((order) => url.includes(order.order_id)) || orders[0];
+  const json = (payload) => new Response(JSON.stringify(payload), {status: 200, headers: {"Content-Type": "application/json"}});
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    const url = typeof input === "string" ? input : input.url;
+    const method = (init.method || "GET").toUpperCase();
+    if (url.includes("/api/batches") && !url.includes("/draft")) {
+      if (url.endsWith("/api/batches")) return json({ok:true, batches:[{batch_id:batchId,title:"脱敏作品集交互 Demo",status:"READY",orders_count:3}]});
+      return json({ok:true, batch:batch()});
+    }
+    if (url.includes("/draft") && method === "GET") return json({ok:true, batch_id:batchId, draft_found:true, orders});
+    if (url.includes("/api/orders/") && url.includes("/status")) {
+      const order = findOrder(url);
+      return json({ok:true, order, events, verification:[], running: order.status === "RUNNING", log:[], screenshots:[], waiting: order.status === "WAITING_PAGE2_APPROVAL" ? "收款人差异等待确认" : null});
+    }
+    if (url.includes("/api/orders/")) {
+      const order = findOrder(url);
+      if (method === "POST" && url.endsWith("/confirm")) order.status = "READY";
+      if (method === "POST" && url.endsWith("/start")) order.status = "RUNNING";
+      if (method === "POST" && url.endsWith("/pause")) order.status = "PAUSED";
+      if (method === "POST" && url.endsWith("/resume")) order.status = "RUNNING";
+      return json({ok:true, order, run_id: order.order_id});
+    }
+    return json({ok:true});
+  };
+  window.confirm = () => true;
+  window.alert = (message) => console.log("demo alert:", message);
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>📋 EPC 报销确认工作台</h1>
+
+
+  <div class="top-nav">
+    <a href="/">← 返回工作模式选择</a>
+    <a href="/single">切换到单笔提报</a>
+  </div>
+
+
+  <div class="card">
+    <h2>批量提报 · 批次工作台</h2>
+    <div class="btns" style="margin-top:0">
+      <select id="batchSelect" style="width:300px;display:inline-block" onchange="selectBatch()"></select>
+      <button class="ghost small" onclick="refreshBatches()">刷新批次</button>
+      <button class="danger small" onclick="deleteCurrentBatch()">删除当前批次</button>
+      <button class="ghost small" onclick="createBatchFromInput()">从多段文本创建批次</button>
+      <button class="ghost small" onclick="addOrderToBatch()">给当前批次加一张单</button>
+    </div>
+    <textarea id="batchInput" rows="4" placeholder="一次粘贴多张单的原始内容（仅识别 字母+8位数字，可选末尾1个字母），也可以只贴一张单后点“加一张单”。"></textarea>
+    <div class="btns">
+      <button class="okbtn" onclick="saveBatchToCodex()">保存本批次给 Codex 解析</button>
+      <button class="ghost" onclick="loadBatchDraft()">加载 Codex 批次草稿</button>
+      <button onclick="startAllReady()">开始处理可执行单据</button>
+      <button class="gray" onclick="refreshOrders()">重置当前批次</button>
+      <button class="ghost" onclick="refreshAllWorkbench()">整体刷新</button>
+    </div>
+    <div id="batchHint" class="batch-help">批量模式沿用单笔提报的完整流程。上方查看整批进度；在下方选择任意单据，即可打开它的草稿、校验和执行控制。</div>
+    <div id="batchSummary" class="status-grid"></div>
+    <div id="batchAttention" class="attention hidden"></div>
+    <div class="batch-toolbar">
+      <div class="filter-group" id="batchFilters">
+        <button class="filter-btn active" data-filter="ALL" onclick="setBatchFilter('ALL')">全部</button>
+        <button class="filter-btn" data-filter="ACTION" onclick="setBatchFilter('ACTION')">待我处理</button>
+        <button class="filter-btn" data-filter="ACTIVE" onclick="setBatchFilter('ACTIVE')">填写中</button>
+        <button class="filter-btn" data-filter="ISSUE" onclick="setBatchFilter('ISSUE')">有异常</button>
+        <button class="filter-btn" data-filter="DONE" onclick="setBatchFilter('DONE')">已完成</button>
+      </div>
+      <span id="batchFilterHint" class="muted">显示全部单据</span>
+    </div>
+    <div class="order-table-wrap">
+      <table id="orderTable" class="order-table">
+        <thead><tr><th>单据 / 项目</th><th>状态</th><th>当前进度</th><th>应报金额</th><th>风险摘要</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="batchWorkbench" class="card order-workbench hidden">
+    <div class="workbench-head">
+      <div>
+        <h2>当前单据工作台 <span id="workbenchTitle" style="font-size:12px;color:#697386;"></span></h2>
+        <div id="workbenchSubtitle" class="workbench-subtitle"></div>
+      </div>
+      <div class="btns" style="margin-top:0">
+        <button class="small" onclick="wbSaveDraft()">保存草稿为 JSON 文件</button>
+        <button class="ghost small" onclick="refreshCurrentOrder()">刷新本单</button>
+        <button class="ghost small" onclick="collapseWorkbench()">收起草稿</button>
+        <button id="workbenchConfirmButton" class="okbtn small hidden" onclick="workbenchControl('confirm')">确认资料并设为可执行</button>
+        <button class="small" onclick="workbenchControl('start')">开始填报</button>
+        <button class="ghost small control-placeholder" onclick="workbenchControl('pause')">暂停</button>
+        <button class="ghost small control-placeholder" onclick="workbenchControl('resume')">继续</button>
+        <button class="gray small control-placeholder" onclick="workbenchControl('restart')">重新填报</button>
+      </div>
+    </div>
+    <div class="workbench-tabs" id="workbenchTabs">
+      <button class="workbench-tab active" data-tab="overview" onclick="selectWorkbenchTab('overview')">草稿概览</button>
+      <button class="workbench-tab" data-tab="expenses" onclick="selectWorkbenchTab('expenses')">费用明细</button>
+      <button class="workbench-tab" data-tab="payees" onclick="selectWorkbenchTab('payees')">收款人</button>
+      <button class="workbench-tab" data-tab="checks" onclick="selectWorkbenchTab('checks')">校验结果</button>
+      <button class="workbench-tab" data-tab="json" onclick="selectWorkbenchTab('json')">标准 JSON</button>
+    </div>
+    <div id="workbenchOverview" class="workbench-pane active">
+      <div class="grid">
+        <div class="field"><label>项目编号</label><input id="project_id"></div>
+        <div class="field"><label>成本归属</label><input id="cost_center"></div>
+        <div class="field"><label>预算负责人</label><input id="budget_owner" placeholder="可选，仅供确认"></div>
+        <div class="field"><label>需产品截图</label><select id="screenshot_required" onchange="toggleScreenshotUpload()"><option value="false">否</option><option value="true">是</option></select></div>
+        <div class="field hidden" id="screenshotUploadField"><label>产品截图文件</label><input id="screenshot_file" type="file" accept="image/*" onchange="uploadScreenshot(this)"><div id="screenshotFileHint" class="muted" style="margin-top:5px;">请选择产品确认截图</div></div>
+        <div class="field"><label>发包序列</label><select id="fanbao_series"><option>研究</option><option>测评</option><option>设计</option><option>其他</option></select></div>
+        <div class="field"><label>发包类型</label><select id="fanbao_type"><option>用户调研</option><option>专家咨询</option><option>游戏测评</option></select></div>
+        <div class="field"><label>测试形式</label><select id="test_form"><option>实验室测试/座谈会</option><option>入户调研</option><option>线上深访/测试</option><option>街访</option></select></div>
+        <div class="field"><label>连续周期</label><select id="cycle"><option>单日</option><option>多日</option></select></div>
+      </div>
+      <h3>收款人规则</h3>
+      <div class="summary" id="payeeSummary"></div>
+      <h3>费用说明</h3>
+      <textarea id="expense_note" rows="6"></textarea>
+      <div id="summary" class="summary" style="margin-top:12px;"></div>
+    </div>
+    <div id="workbenchExpenses" class="workbench-pane">
+      <h3>国内玩家礼金（常规）</h3>
+      <table id="giftTable">
+        <thead><tr><th>礼金小类</th><th>测试形式</th><th>周期</th><th>稀缺性</th><th>时长</th><th>样本量</th><th>单价</th><th>总金额</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="btns"><button class="ghost small" onclick="addGiftRow()">+ 增加礼金明细</button></div>
+      <h3>国内兼职</h3>
+      <table id="parttimeDetailTable">
+        <thead><tr><th>工作类型</th><th>工作难度</th><th>场次/样本量</th><th>标准单价</th><th>总金额</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="btns"><button class="ghost small" onclick="addParttimeDetailRow()">+ 增加兼职明细</button></div>
+      <h3>其他费用</h3>
+      <table id="otherTable">
+        <thead><tr><th>发包内容</th><th>数量</th><th>单价</th><th>总金额</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="btns"><button class="ghost small" onclick="addOtherRow()">+ 增加其他费用</button></div>
+    </div>
+    <div id="workbenchPayees" class="workbench-pane">
+      <h3>玩家</h3>
+      <table id="playerTable"><thead><tr><th>姓名</th><th>手机号</th><th>默认金额</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="btns"><button class="ghost small" onclick="addPayeeRow('playerTable')">+ 玩家</button></div>
+      <h3>渠道接口人 / 转介</h3>
+      <table id="interfaceTable"><thead><tr><th>姓名</th><th>转介人数</th><th>收款金额</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="btns"><button class="ghost small" onclick="addPayeeRow('interfaceTable')">+ 接口人</button></div>
+      <h3>兼职收款人</h3>
+      <table id="parttimePayeeTable"><thead><tr><th>姓名</th><th>收款金额</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="btns"><button class="ghost small" onclick="addPayeeRow('parttimePayeeTable')">+ 兼职</button></div>
+    </div>
+    <div id="workbenchChecks" class="workbench-pane">
+      <div id="checks" class="checks"></div>
+      <div id="workbenchWarnings" class="attention" style="margin-top:12px;"></div>
+    </div>
+    <div id="workbenchJson" class="workbench-pane">
+      <p class="muted" style="margin-bottom:8px;">以下为标准 JSON 预览，点顶部“保存草稿为 JSON 文件”后覆盖批次草稿。</p>
+      <div id="jsonbox" class="json"></div>
+    </div>
+  </div>
+
+
+
+
+
+  <div class="card hidden" id="runCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin-bottom:0;">执行进度 <span id="runTitle" style="font-size:12px;color:#697386;"></span></h2><button class="ghost small" onclick="clearRunHistory()">清除本单记录</button></div>
+    <div id="waitBox" class="wait-box hidden">
+      <div class="q" id="waitQ"></div>
+      <input id="waitInput" style="width:60%;display:inline-block">
+      <button onclick="sendResp()">发送</button>
+      <button id="waitYesButton" class="gray" onclick="sendResp('y')">是(y)</button>
+      <button id="waitReverifyButton" class="okbtn hidden" onclick="sendResp('y')">已修正，重新核验</button>
+      <button id="waitCompleteButton" class="okbtn hidden" onclick="sendResp('y')">确认核验无误，完成提报</button>
+      <button class="gray" onclick="sendResp('n')">否(n)</button>
+    </div>
+    <div id="payeeReviewBox" class="wait-box hidden">
+      <div class="q" id="payeeReviewTitle">平台多余人员处理（默认删除；选择保留时必须补充身份和金额）</div>
+      <table id="payeeReviewTable">
+        <thead><tr><th>姓名</th><th>手机号</th><th>判断</th><th>处理方式</th><th>保留身份</th><th>保留金额</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="verificationReviewBox" class="hidden" style="margin-top:12px;"></div>
+      <div id="proxyReviewBox" class="attention hidden"></div>
+      <div class="btns"><button id="payeeReviewSubmitButton" onclick="submitPayeeReview()">应用处理/修正并重新核验</button></div>
+    </div>
+    <div id="log"></div><div id="shots" class="shots"></div><div id="runStatus" class="muted" style="margin-top:10px;"></div>
+  </div>
+
+</div>
+<div id="uiToast" class="hidden"></div>
+
+<script>
+const PAGE_MODE="batch";
+const INITIAL_ORDER_ID="";
+const PROJECT_ID_PATTERN=/(?<![A-Za-z0-9])([A-Za-z]\d{8}[A-Za-z]?)(?![A-Za-z0-9])/;
+let curData=null, runId=null, pollTimer=null, payeeReviewSig='', pollGeneration=0;
+let selectedOrderId=null, currentBatchId=null, orderList=[];
+let batchFilter='ALL', workbenchOrder=null, toastTimer=null;
+const STATUS_LABEL={'DRAFT':'草稿','WAITING_CODEX':'待Codex解析','WAITING_CONFIRMATION':'待资料确认','READY':'可执行','QUEUED':'排队中','RUNNING':'填写中','WAITING_PRECHECK_APPROVAL':'重复项目待确认','WAITING_PAGE1_APPROVAL':'第1页待确认','FILLING_PAYEES':'收款人填写中','WAITING_PAGE2_APPROVAL':'收款人待确认','VERIFYING_PAYEES':'礼金核验中','PAUSE_REQUESTED':'请求暂停中','PAUSED':'已暂停','REQUIRES_ATTENTION':'待修正','READY_TO_SUBMIT':'待最终提交','COMPLETED':'提报完成（第2页已确认）','FAILED':'失败'};
+const STATUS_CLASS={'READY':'green','QUEUED':'blue','RUNNING':'blue','WAITING_PRECHECK_APPROVAL':'blue','WAITING_PAGE1_APPROVAL':'blue','FILLING_PAYEES':'blue','WAITING_PAGE2_APPROVAL':'blue','VERIFYING_PAYEES':'blue','PAUSE_REQUESTED':'red','PAUSED':'red','WAITING_CONFIRMATION':'red','REQUIRES_ATTENTION':'red','FAILED':'red','READY_TO_SUBMIT':'blue','COMPLETED':'green'};
+let noteEdited=false;
+const PT_RATES={
+  '甄别执行': {'5~10mins/个':8,'10~20mins/个':12,'20~30mins/个':16,'>30mins/个':26},
+  '电访执行': {'30mins以内/个':30,'30~60mins/个':45,'60~90mins/个':80,'90~120mins/个':100},
+  '测试执行': {'2H以内/场':150,'2~4小时/场':200,'4~6小时/场':250},
+  '街访执行': {'10分钟以内/个':30,'30分钟以内/个':65,'30~60分钟/个':104,'千万级':13,'百万级':27,'十万级':44},
+  '海捞名单': {'个':28},
+  '其他测试支持': {'<0.5H/个&篇':10,'<1H/个&篇':30,'1~3H/个&篇':100,'3~6H/个&篇':150}
+};
+const OTHER_DEFAULT_PRICE={'餐饮费':30,'交通费':50,'账号购买':0,'场地/设备租借':0,'广告投放':0,'礼品':0,'住宿费':0,'其他':0};
+function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function setVal(id,v){const el=document.getElementById(id); if(el) el.value=v??''}
+function toggleScreenshotUpload(){const required=document.getElementById('screenshot_required')?.value==='true';const field=document.getElementById('screenshotUploadField');if(field)field.classList.toggle('hidden',!required)}
+async function uploadScreenshot(input){const file=input?.files?.[0];if(!file)return;const hint=document.getElementById('screenshotFileHint');if(hint)hint.textContent='正在上传 '+file.name+'…';const form=new FormData();form.append('file',file);try{const response=await fetch('/upload',{method:'POST',body:form});const data=await response.json();if(!response.ok||data.error)throw new Error(data.error||'上传失败');curData=curData||{};curData.screenshot_path=data.path;curData.screenshot_mode='required';if(hint)hint.textContent='✅ 已上传：'+file.name;rebuildPreview()}catch(error){if(hint)hint.textContent='❌ 上传失败：'+(error.message||error)}}
+function bindRow(tr){tr.querySelectorAll('input,select').forEach(el=>{el.oninput=()=>{noteEdited=false;rebuildPreview()};el.onchange=()=>{noteEdited=false;rebuildPreview()}})}
+
+function giftRowHtml(r={}){return `<tr><td><select data-k="礼金小类"><option>基础礼金</option><option>交通补贴</option><option>转介费</option><option>超时礼金</option><option>应急礼金</option></select></td><td><select data-k="测试形式"><option>实验室测试/座谈会</option><option>入户调研</option><option>线上深访/测试</option><option>街访</option></select></td><td><select data-k="连续周期"><option>单日</option><option>多日</option></select></td><td><select data-k="样本稀缺性"><option></option><option>千万级</option><option>百万级</option><option>十万级</option><option>千级</option></select></td><td><input data-k="测试时长(小时)" type="number" value="${esc(r['测试时长(小时)']??'')}"></td><td><input data-k="样本量" type="number" value="${esc(r['样本量']??'')}"></td><td><input data-k="单价(元)" type="number" value="${esc(r['单价(元)']??'')}"></td><td><input data-k="总金额(元)" type="number" value="${esc(r['总金额(元)']??'')}"></td><td><button class="ghost small" onclick="this.closest('tr').remove();rebuildPreview()">删</button></td></tr>`}
+function addGiftRow(r={}){const tb=document.querySelector('#giftTable tbody');tb.insertAdjacentHTML('beforeend',giftRowHtml(r));const tr=tb.lastElementChild;tr.querySelectorAll('select').forEach(s=>{if(r[s.dataset.k])s.value=r[s.dataset.k]});bindRow(tr)}
+function ptRowHtml(r={}){return `<tr><td><select data-k="工作类型" onchange="refreshPtDifficulty(this.closest('tr'));rebuildPreview()">${Object.keys(PT_RATES).map(x=>`<option>${x}</option>`).join('')}</select></td><td><select data-k="工作难度"></select></td><td><input data-k="测试场次/样本量" type="number" value="${esc(r['测试场次/样本量']??'')}"></td><td><input data-k="标准单价" type="number" value="${esc(r['标准单价']??'')}"></td><td><input data-k="总金额(元)" type="number" value="${esc(r['总金额(元)']??'')}"></td><td><button class="ghost small" onclick="this.closest('tr').remove();rebuildPreview()">删</button></td></tr>`}
+function refreshPtDifficulty(tr, diff, preserveUnit=false){const type=tr.querySelector('[data-k="工作类型"]').value;const sel=tr.querySelector('[data-k="工作难度"]');sel.innerHTML=Object.keys(PT_RATES[type]||{}).map(x=>`<option>${x}</option>`).join('');if(diff)sel.value=diff;updatePtPrice(tr,{preserveUnit})}
+function updatePtPrice(tr,opt={}){const type=tr.querySelector('[data-k="工作类型"]').value;const diff=tr.querySelector('[data-k="工作难度"]').value;const unitInput=tr.querySelector('[data-k="标准单价"]');const standard=PT_RATES[type]?.[diff]??0;if(!opt.preserveUnit||!unitInput.value)unitInput.value=standard;const unit=n(unitInput.value);const qty=n(tr.querySelector('[data-k="测试场次/样本量"]').value);if(qty&&unit)tr.querySelector('[data-k="总金额(元)"]').value=qty*unit}
+function addParttimeDetailRow(r={}){const tb=document.querySelector('#parttimeDetailTable tbody');tb.insertAdjacentHTML('beforeend',ptRowHtml(r));const tr=tb.lastElementChild;if(r['工作类型'])tr.querySelector('[data-k="工作类型"]').value=r['工作类型'];if(r['标准单价']!=null)tr.querySelector('[data-k="标准单价"]').value=r['标准单价'];refreshPtDifficulty(tr,r['工作难度'],r['标准单价']!=null);bindRow(tr);tr.querySelector('[data-k="工作难度"]').onchange=()=>{updatePtPrice(tr);rebuildPreview()};tr.querySelector('[data-k="测试场次/样本量"]').oninput=()=>{updatePtPrice(tr,{preserveUnit:true});rebuildPreview()};tr.querySelector('[data-k="标准单价"]').oninput=()=>{updatePtPrice(tr,{preserveUnit:true});rebuildPreview()}}
+function otherRowHtml(r={}){return `<tr><td><select data-k="发包内容">${Object.keys(OTHER_DEFAULT_PRICE).map(x=>`<option>${x}</option>`).join('')}</select></td><td><input data-k="数量" type="number" value="${esc(r['数量']??'')}"></td><td><input data-k="单价" type="number" value="${esc(r['单价']??'')}"></td><td><input data-k="总金额(元)" type="number" value="${esc(r['总金额(元)']??'')}"></td><td><button class="ghost small" onclick="this.closest('tr').remove();rebuildPreview()">删</button></td></tr>`}
+function updateOtherPrice(tr){const type=tr.querySelector('[data-k="发包内容"]').value;const unitInput=tr.querySelector('[data-k="单价"]');if(!unitInput.value)unitInput.value=OTHER_DEFAULT_PRICE[type]||0;const qty=n(tr.querySelector('[data-k="数量"]').value);const unit=n(unitInput.value);if(qty&&unit)tr.querySelector('[data-k="总金额(元)"]').value=qty*unit}
+function addOtherRow(r={}){const tb=document.querySelector('#otherTable tbody');tb.insertAdjacentHTML('beforeend',otherRowHtml(r));const tr=tb.lastElementChild;if(r['发包内容'])tr.querySelector('[data-k="发包内容"]').value=r['发包内容'];bindRow(tr);tr.querySelector('[data-k="发包内容"]').onchange=()=>{tr.querySelector('[data-k="单价"]').value='';updateOtherPrice(tr);rebuildPreview()};tr.querySelector('[data-k="数量"]').oninput=()=>{updateOtherPrice(tr);rebuildPreview()};tr.querySelector('[data-k="单价"]').oninput=()=>{updateOtherPrice(tr);rebuildPreview()}}
+function payeeRowHtml(kind,r={}){if(kind==='playerTable')return `<tr><td><input value="${esc(r.name)}"></td><td><input value="${esc(r.phone)}"></td><td><input type="number" value="${esc(r.amount)}"></td><td><button class="ghost small" onclick="this.closest('tr').remove();rebuildPreview()">删</button></td></tr>`;if(kind==='interfaceTable')return `<tr><td><input value="${esc(r.name)}"></td><td><input type="number" value="${esc(r.referral_count)}"></td><td><input type="number" value="${esc(r.amount)}"></td><td><button class="ghost small" onclick="this.closest('tr').remove();rebuildPreview()">删</button></td></tr>`;return `<tr><td><input value="${esc(r.name)}"></td><td><input type="number" value="${esc(r.amount)}"></td><td><button class="ghost small" onclick="this.closest('tr').remove();rebuildPreview()">删</button></td></tr>`}
+function addPayeeRow(id,r={}){const tb=document.querySelector(`#${id} tbody`);tb.insertAdjacentHTML('beforeend',payeeRowHtml(id,r));bindRow(tb.lastElementChild)}
+
+function collectRows(table){return Array.from(document.querySelectorAll(`#${table} tbody tr`)).map(tr=>{const o={};tr.querySelectorAll('input,select').forEach(el=>{const k=el.dataset.k;if(!k)return;o[k]=el.type==='number'?(el.value===''?null:Number(el.value)):el.value});return o}).filter(o=>Object.values(o).some(v=>v!==''&&v!==null))}
+function collectPayees(){const players=[],ifs=[],pts=[],phones={};document.querySelectorAll('#playerTable tbody tr').forEach(tr=>{const i=tr.querySelectorAll('input');const name=i[0]?.value.trim();if(!name)return;players.push({name,phone:i[1].value.trim(),amount:n(i[2].value)});if(i[1].value.trim())phones[name]=i[1].value.trim()});document.querySelectorAll('#interfaceTable tbody tr').forEach(tr=>{const i=tr.querySelectorAll('input');const name=i[0]?.value.trim();if(name)ifs.push({name,type:'渠道接口人',referral_count:n(i[1].value),amount:n(i[2].value)})});document.querySelectorAll('#parttimePayeeTable tbody tr').forEach(tr=>{const i=tr.querySelectorAll('input');const name=i[0]?.value.trim();if(name)pts.push({name,type:'兼职',amount:n(i[1].value)})});return{players,ifs,pts,phones}}
+function buildCurrentData(){const gift=collectRows('giftTable');const baseGift=gift.find(r=>r['礼金小类']==='基础礼金');if(baseGift?.['样本稀缺性'])gift.filter(r=>r['礼金小类']==='交通补贴'&&!r['样本稀缺性']).forEach(r=>r['样本稀缺性']=baseGift['样本稀缺性']);const partRows=collectRows('parttimeDetailTable').map(r=>({'工作类型':r['工作类型'],'工作难度':r['工作难度'],'测试场次/样本量':r['测试场次/样本量'],'标准单价':r['标准单价'],'总金额(元)':r['总金额(元)']}));const otherRows=collectRows('otherTable').map(r=>({'发包内容':r['发包内容'],'数量':r['数量'],'单价':r['单价'],'总金额(元)':r['总金额(元)']}));const {players,ifs,pts,phones}=collectPayees();const types=[];if(gift.length)types.push('礼金(常规)');if(partRows.length)types.push('兼职');if(otherRows.length)types.push('其他');const grand=[...gift,...partRows,...otherRows].reduce((s,r)=>s+n(r['总金额(元)']),0);const previousRules=curData?.payee_rules||{};const screenshotNeeded=screenshot_required.value==='true';const data={project_id:project_id.value.trim(),fanbao_series:fanbao_series.value,fanbao_type:fanbao_type.value,cost_center:cost_center.value.trim(),budget_owner:budget_owner.value.trim(),screenshot_required:screenshotNeeded,screenshot_mode:screenshotNeeded?'required':'skip',screenshot_path:curData?.screenshot_path||null,reimbursement_types:types,gift_common:gift.length?{total_sample:players.length,rows:gift}:null,gift_special:null,questionnaire:null,parttime:partRows.length?{rows:partRows}:null,other:otherRows.length?{rows:otherRows}:null,payee_rules:{expected_total:players.length+ifs.length+pts.length,expected_breakdown:{'玩家':players.length,'渠道接口人':ifs.length,'兼职':pts.length},default_player_amount:players[0]?.amount||0,known_players:players.map(p=>p.name),known_phones:phones,specific:[...ifs,...pts],proxies:previousRules.proxies||[]},grand_total:grand};data.expense_note=noteEdited?expense_note.value:makeExpenseNote(data);return data}
+function makeExpenseNote(d){const rows=d.gift_common?.rows||[],pr=d.payee_rules||{};const base=rows.find(r=>r['礼金小类']==='基础礼金'),trans=rows.find(r=>r['礼金小类']==='交通补贴'),ref=rows.find(r=>r['礼金小类']==='转介费');const pt=d.parttime?.rows||[],ot=d.other?.rows||[];let s=`${d.cost_center||''}执行了${d.project_id||''}项目，共产生费用${d.grand_total||0}元，全部走EPC公账报销。\n详细报销内容为：\n\n`;if(base||trans){const total=n(base?.['总金额(元)'])+n(trans?.['总金额(元)']);s+=`【玩家礼金】${total}元，共${pr.expected_breakdown?.['玩家']||0}名玩家参与${base?.['测试形式']||test_form.value}，默认单价${pr.default_player_amount||0}元/人`;if(base&&trans)s+=`（基础礼金${Math.round(n(base['总金额(元)'])/Math.max(1,n(base['样本量'])))}+交通补贴${Math.round(n(trans['总金额(元)'])/Math.max(1,n(trans['样本量'])))}）`;s+=`。\n\n`}if(ref){const ifs=(pr.specific||[]).filter(x=>x.type==='渠道接口人');s+=`【转介费/接口人费用】${ref['总金额(元)']}元，${ifs.length}名渠道接口人协助玩家招募转介（合计${ref['样本量']}人次），费用分别为：${ifs.map(x=>`${x.name}${x.amount}元`).join('、')}。\n\n`}if(pt.length){s+=`【兼职费用】${pt.reduce((a,b)=>a+n(b['总金额(元)']),0)}元，明细为：${pt.map(r=>`${r['工作类型']}${r['测试场次/样本量']}×${Math.round(n(r['总金额(元)'])/Math.max(1,n(r['测试场次/样本量'])))}=${r['总金额(元)']}元`).join('、')}。\n\n`}if(ot.length){s+=`【其他费用】${ot.reduce((a,b)=>a+n(b['总金额(元)']),0)}元，明细为：${ot.map(r=>`${r['发包内容']}${r['数量']}项/人次=${r['总金额(元)']}元`).join('、')}。`}return s.trim()}
+function validateData(d){const checks=[];const rows=d.gift_common?.rows||[],pr=d.payee_rules||{};const detailTotal=[...rows,...(d.parttime?.rows||[]),...(d.other?.rows||[])].reduce((s,r)=>s+n(r['总金额(元)']),0);const payeeTotal=(pr.expected_breakdown?.['玩家']||0)*n(pr.default_player_amount)+(pr.specific||[]).reduce((s,x)=>s+n(x.amount),0);const iface=(pr.specific||[]).filter(x=>x.type==='渠道接口人');const partPayees=(pr.specific||[]).filter(x=>x.type==='兼职');const ref=rows.find(r=>r['礼金小类']==='转介费');checks.push({level:d.project_id?'ok':'err',text:d.project_id?'项目号已填写':'缺少项目号'});checks.push({level:d.cost_center?'ok':'err',text:d.cost_center?'成本归属已填写':'缺少成本归属，不能开始 EPC 自动填写'});checks.push({level:detailTotal===d.grand_total?'ok':'warn',text:`报销明细合计 ${detailTotal} 元 / 总额 ${d.grand_total} 元`});checks.push({level:detailTotal===payeeTotal?'ok':'warn',text:`报销合计 ${detailTotal} 元 / 收款人合计 ${payeeTotal} 元`});if(iface.length)checks.push({level:ref?'ok':'err',text:ref?`已包含转介费 ${ref['样本量']}人次 ${ref['总金额(元)']}元`:'有接口人但缺少转介费明细'});if(partPayees.length)checks.push({level:d.parttime?.rows?.length?'ok':'err',text:d.parttime?.rows?.length?'已包含国内兼职明细':'有兼职收款人但缺少国内兼职明细'});if((d.other?.rows||[]).length)checks.push({level:'ok',text:`已包含其他费用 ${(d.other.rows||[]).length} 行`});checks.push({level:d.screenshot_required?(d.screenshot_path?'ok':'err'):'ok',text:d.screenshot_required?(d.screenshot_path?'需要截图：已提供':'需要产品确认截图，但尚未提供截图文件'):'本单不需要产品确认截图'});for(const proxy of pr.proxies||[]){const source=proxy.source_name||proxy.source||'',target=proxy.proxy_name||proxy.proxy||'';if(!source||!target)checks.push({level:'err',text:'存在不完整的代收关系（需来源人和代收人）'});else if(source===target)checks.push({level:'err',text:`代收关系 ${source} 的来源人与代收人不能相同`})}(pr.specific||[]).forEach(person=>{if(!(person.name||'').trim())checks.push({level:'err',text:'存在无姓名的收款人'});if(person.amount===null||person.amount===undefined||person.amount==='')checks.push({level:'err',text:`收款人 ${person.name||'未命名'} 缺少应填金额`})});(d.warnings||[]).forEach(w=>checks.push({level:'warn',text:w}));return checks}
+function renderPreview(d){const pr=d.payee_rules||{};summary.innerHTML=`项目：${esc(d.project_id)}｜${esc(d.fanbao_series)}｜${esc(d.fanbao_type)}｜${esc(d.cost_center)}<br>`+[(d.gift_common?.rows||[]).map(r=>`礼金·${esc(r['礼金小类'])}：${esc(r['样本量'])} = ${esc(r['总金额(元)'])}元`).join('<br>'),(d.parttime?.rows||[]).map(r=>`兼职·${esc(r['工作类型'])}：${esc(r['测试场次/样本量'])} = ${esc(r['总金额(元)'])}元`).join('<br>'),(d.other?.rows||[]).map(r=>`其他·${esc(r['发包内容'])}：${esc(r['数量'])} = ${esc(r['总金额(元)'])}元`).join('<br>')].filter(Boolean).join('<br>')+`<br><b>合计：${d.grand_total}元（收款${pr.expected_total||0}人）</b>`;payeeSummary.innerHTML=`玩家 <span class="tag green">${pr.expected_breakdown?.['玩家']||0}</span>　接口人 <span class="tag red">${pr.expected_breakdown?.['渠道接口人']||0}</span>　兼职 <span class="tag blue">${pr.expected_breakdown?.['兼职']||0}</span>`;checks.innerHTML=validateData(d).map(c=>`<div class="check ${c.level}">${esc(c.text)}</div>`).join('');jsonbox.textContent=JSON.stringify(d,null,2);if(!noteEdited)expense_note.value=d.expense_note||''}
+function rebuildPreview(){curData=buildCurrentData();renderPreview(curData)}
+function renderData(d){noteEdited=false;curData=d||{};if(curData.expense_note)curData.expense_note=curData.expense_note.replaceAll('\\\\n','\n');setVal('project_id',curData.project_id);setVal('cost_center',curData.cost_center);setVal('budget_owner',curData.budget_owner);setVal('fanbao_series',curData.fanbao_series||'研究');setVal('fanbao_type',curData.fanbao_type||'用户调研');setVal('screenshot_required',String(!!curData.screenshot_required));const first=(curData.gift_common?.rows||[])[0]||{};setVal('test_form',first['测试形式']||'实验室测试/座谈会');setVal('cycle',first['连续周期']||'单日');giftTable.querySelector('tbody').innerHTML='';(curData.gift_common?.rows||[]).forEach(addGiftRow);if(!curData.gift_common?.rows?.length)addGiftRow();parttimeDetailTable.querySelector('tbody').innerHTML='';(curData.parttime?.rows||[]).forEach(addParttimeDetailRow);otherTable.querySelector('tbody').innerHTML='';(curData.other?.rows||[]).forEach(addOtherRow);const pr=curData.payee_rules||{};playerTable.querySelector('tbody').innerHTML='';(pr.known_players||[]).forEach(name=>addPayeeRow('playerTable',{name,phone:(pr.known_phones||{})[name]||'',amount:pr.default_player_amount||''}));if(!(pr.known_players||[]).length)addPayeeRow('playerTable');interfaceTable.querySelector('tbody').innerHTML='';(pr.specific||[]).filter(x=>x.type==='渠道接口人').forEach(x=>addPayeeRow('interfaceTable',x));if(!(pr.specific||[]).some(x=>x.type==='渠道接口人'))addPayeeRow('interfaceTable');parttimePayeeTable.querySelector('tbody').innerHTML='';(pr.specific||[]).filter(x=>x.type==='兼职').forEach(x=>addPayeeRow('parttimePayeeTable',x));if(!(pr.specific||[]).some(x=>x.type==='兼职'))addPayeeRow('parttimePayeeTable');renderPreview(curData)}
+function refreshScreenshotUploadHint(){toggleScreenshotUpload();const hint=document.getElementById('screenshotFileHint');if(hint&&curData?.screenshot_path)hint.textContent='✅ 已上传：'+String(curData.screenshot_path).split(/[\\/]/).pop()}
+async function api(url,opt={}){const method=(opt.method||'GET').toUpperCase();const requestUrl=method==='GET'?url+(url.includes('?')?'&':'?')+'_refresh='+Date.now():url;const r=await fetch(requestUrl,{cache:'no-store',...opt,headers:{'Cache-Control':'no-cache',...(opt.headers||{})}});let d;try{d=await r.json()}catch(e){throw new Error('接口返回异常 HTTP '+r.status)}if(!d.ok)throw new Error(d.error||('HTTP '+r.status));return d}
+async function refreshBatches(){const d=await api('/api/batches');const sel=document.getElementById('batchSelect');if(!sel)return;sel.innerHTML=(d.batches||[]).map(b=>`<option value="${b.batch_id}">${b.batch_id}（${b.orders_count||0}单/${b.status}）</option>`).join('')||'<option value="">暂无批次</option>';if(currentBatchId&&(d.batches||[]).some(b=>b.batch_id===currentBatchId)){sel.value=currentBatchId}else if((d.batches||[]).length){currentBatchId=d.batches[0].batch_id;sel.value=currentBatchId}if(currentBatchId)await selectBatch();else{orderList=[];renderOrders();renderBatchSummary();collapseWorkbench()}}
+async function selectBatch(){const sel=document.getElementById('batchSelect');if(!sel)return;const nextBatchId=sel.value;if(currentBatchId&&currentBatchId!==nextBatchId)collapseWorkbench();currentBatchId=nextBatchId;if(!currentBatchId){orderList=[];renderOrders();renderBatchSummary();return}const d=await api('/api/batches/'+currentBatchId);orderList=d.batch.orders;renderOrders();renderBatchSummary();document.getElementById('batchHint').innerHTML=`批次 <b>${currentBatchId}</b>：共 ${orderList.length} 张单。点击“查看草稿”可在本页下方展开该单的完整工作台。`}
+function renderBatchSummary(){const root=document.getElementById('batchSummary'),attention=document.getElementById('batchAttention');if(!root||!attention)return;const count=(...s)=>orderList.filter(o=>s.includes(o.status)).length;const cards=[['总单数',orderList.length],['可执行',count('READY')],['执行/排队',count('RUNNING','FILLING_PAYEES','VERIFYING_PAYEES')],['等待确认',count('WAITING_CONFIRMATION','WAITING_PAGE1_APPROVAL','WAITING_PAGE2_APPROVAL','READY_TO_SUBMIT')],['需修正',count('REQUIRES_ATTENTION','FAILED')],['填写完成',count('COMPLETED')]];root.innerHTML=cards.map(([label,value])=>`<div class="status-card"><span>${label}</span><strong>${value}</strong></div>`).join('');const need=orderList.filter(o=>['WAITING_CONFIRMATION','WAITING_PAGE1_APPROVAL','WAITING_PAGE2_APPROVAL','READY_TO_SUBMIT','REQUIRES_ATTENTION','FAILED'].includes(o.status));if(!need.length){attention.classList.add('hidden');attention.innerHTML='';return}attention.classList.remove('hidden');attention.innerHTML=`<b>待你处理（${need.length}）</b><ul>${need.map(o=>`<li>${esc(o.project_id||o.order_id)}：${esc(STATUS_LABEL[o.status]||o.status)}　${attentionAction(o)}</li>`).join('')}</ul>`}
+function attentionAction(o){if(o.status==='WAITING_CONFIRMATION')return `<button class="ghost small" onclick="openWorkbench('${o.order_id}')">查看草稿</button><button class="okbtn small" onclick="confirmOrder('${o.order_id}')">确认资料</button>`;if(o.status==='REQUIRES_ATTENTION')return `<button class="ghost small" onclick="openWorkbench('${o.order_id}')">查看草稿</button>`;if(o.status==='FAILED')return `<button class="ghost small" onclick="openRunPanel('${o.order_id}')">查看异常</button>`;return `<button class="ghost small" onclick="openRunPanel('${o.order_id}')">查看并确认</button>`}
+function isVisibleByFilter(o){if(batchFilter==='ALL')return true;if(batchFilter==='ACTION')return ['WAITING_CONFIRMATION','WAITING_PAGE1_APPROVAL','WAITING_PAGE2_APPROVAL','READY_TO_SUBMIT','REQUIRES_ATTENTION','FAILED'].includes(o.status);if(batchFilter==='ACTIVE')return ['RUNNING','FILLING_PAYEES','VERIFYING_PAYEES'].includes(o.status);if(batchFilter==='ISSUE')return ['REQUIRES_ATTENTION','FAILED'].includes(o.status)||(o.warnings||[]).length>0;if(batchFilter==='DONE')return o.status==='COMPLETED';return true}
+function setBatchFilter(filter){batchFilter=filter;document.querySelectorAll('#batchFilters [data-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.filter===filter));const labels={ALL:'显示全部单据',ACTION:'只显示待我处理',ACTIVE:'只显示填写中',ISSUE:'只显示有异常',DONE:'只显示已完成'};const hint=document.getElementById('batchFilterHint');if(hint)hint.textContent=labels[filter]||'';renderOrders()}
+function shortOrderText(value,max=86){const text=String(value||'').replace(/\s+/g,' ').trim();return text.length>max?text.slice(0,max)+'…':text}
+function renderOrders(){const tb=document.querySelector('#orderTable tbody');if(!tb)return;const shown=orderList.filter(isVisibleByFilter);if(!shown.length){tb.innerHTML='<tr><td colspan="6" class="muted" style="text-align:center;padding:24px">当前筛选条件下没有单据</td></tr>';return}tb.innerHTML=shown.map(o=>{const issues=[...(o.warnings||[]),...(o.error?[o.error]:[])];const step=o.current_step||'尚未进入 EPC 填写';const selected=workbenchOrder?.order_id===o.order_id?' class="order-row-selected"':'';const issuePreview=issues.length?shortOrderText(issues[0],74):'当前没有额外风险提示';return `<tr${selected}><td class="order-ident"><strong>${esc(o.project_id||'未识别项目')}</strong><span>${esc(o.order_id)}</span></td><td class="order-status"><span class="tag ${STATUS_CLASS[o.status]||'blue'}">${STATUS_LABEL[o.status]||o.status}</span></td><td class="order-progress"><div class="order-progress-title">${esc(shortOrderText(step,34))}</div><div class="order-progress-text" title="${esc(step)}">${esc(shortOrderText(step,110))}</div></td><td class="order-money">${o.draft&&o.draft.grand_total!=null?money(o.draft.grand_total):'—'}</td><td class="order-issue"><div class="issue-badge ${issues.length?'':'clear'}">${issues.length?'⚠ '+issues.length+' 项待关注':'✓ 无风险'}</div><div class="order-issue-text" title="${esc(issues.join('；'))}">${esc(issuePreview)}</div></td><td><div class="order-actions">${orderActions(o)}</div></td></tr>`}).join('')}
+function orderActions(o){const b=[`<button class="ghost small" onclick="openWorkbench('${o.order_id}')">查看草稿</button>`];if(o.status==='WAITING_CONFIRMATION')b.push(`<button class="okbtn small" onclick="confirmOrder('${o.order_id}')">确认资料</button>`);if(o.status==='READY')b.push(`<button class="small" onclick="startOrder('${o.order_id}')">开始</button>`);if(['QUEUED','RUNNING','WAITING_PRECHECK_APPROVAL','WAITING_PAGE1_APPROVAL','FILLING_PAYEES','WAITING_PAGE2_APPROVAL','VERIFYING_PAYEES','READY_TO_SUBMIT','PAUSE_REQUESTED'].includes(o.status))b.push(`<button class="ghost small" onclick="openRunPanel('${o.order_id}')">查看运行</button>`,`<button class="ghost small" onclick="controlOrder('pause','${o.order_id}')">暂停</button>`);if(o.status==='PAUSED')b.push(`<button class="small" onclick="controlOrder('resume','${o.order_id}')">继续</button>`,`<button class="ghost small" onclick="openRunPanel('${o.order_id}')">查看运行</button>`);if(o.status==='REQUIRES_ATTENTION'||o.status==='FAILED'||o.status==='COMPLETED')b.push(`<button class="gray small" onclick="controlOrder('restart','${o.order_id}')">重新填报</button>`);if(!['QUEUED','RUNNING','WAITING_PRECHECK_APPROVAL','WAITING_PAGE1_APPROVAL','FILLING_PAYEES','WAITING_PAGE2_APPROVAL','VERIFYING_PAYEES','READY_TO_SUBMIT','PAUSE_REQUESTED','PAUSED'].includes(o.status))b.push(`<button class="danger small" onclick="deleteOrder('${o.order_id}','${o.project_id||''}')">删除</button>`);return b.join('')}
+function money(v){const value=Number(v);return Number.isFinite(value)?`${value.toLocaleString('zh-CN')} 元`:'—'}
+function draftTable(headers, rows){if(!rows.length)return '<div class="muted" style="padding:10px 0">暂无明细</div>';return `<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(cell=>`<td>${esc(cell??'—')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+function workbenchMetadata(data){const first=(data.gift_common?.rows||[])[0]||{};const items=[['项目号',data.project_id||'—'],['成本归属',data.cost_center||'—'],['发包信息',[data.fanbao_series,data.fanbao_type].filter(Boolean).join(' / ')||'—'],['需产品截图',data.screenshot_required?'是':'否'],['测试形式',first['测试形式']||'—'],['连续周期',first['连续周期']||'—'],['报销总额',money(data.grand_total)],['收款人数',data.payee_rules?.expected_total??'—']];return `<div class="draft-meta">${items.map(([label,value])=>`<div class="draft-meta-item"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}</div>`}
+function uniqueIssueTexts(items){return [...new Set(items.map(item=>String(item||'').trim()).filter(Boolean))]}
+function workbenchIssueGroups(order,data){const checks=validateData(data);const required=checks.filter(item=>item.level==='err').map(item=>item.text);const possible=checks.filter(item=>item.level==='warn').map(item=>item.text);const meta=order.meta||{};if(meta.codex_error)required.push(`Codex 解析错误：${meta.codex_error}`);(meta.codex_missing||[]).forEach(field=>{const text=`Codex 待补字段：${field}`;if(/玩家.*手机|手机.*号|联系方式/.test(String(field)))possible.push(text);else required.push(text)});if(order.error)required.push(`当前运行异常：${order.error}`);(order.warnings||[]).forEach(item=>possible.push(item));return{required:uniqueIssueTexts(required),possible:uniqueIssueTexts(possible)}}
+function renderIssueSection(title,items,kind,emptyText){if(!items.length)return `<div class="issue-section empty"><b>${esc(title)}</b>：${esc(emptyText)}</div>`;return `<section class="issue-section ${kind}"><h3>${esc(title)}（${items.length}）</h3><ul>${items.map(item=>`<li>${esc(item)}</li>`).join('')}</ul></section>`}
+function renderWorkbench(){const order=workbenchOrder,box=document.getElementById('batchWorkbench');if(!box)return;if(!order){box.classList.add('hidden');return}const data=order.draft||{};const title=document.getElementById('workbenchTitle'),subtitle=document.getElementById('workbenchSubtitle');title.textContent=`｜${order.project_id||order.order_id}`;subtitle.innerHTML=`单据编号：<b>${esc(order.order_id)}</b>　当前状态：<span class="tag ${STATUS_CLASS[order.status]||'blue'}">${esc(STATUS_LABEL[order.status]||order.status)}</span>`;const confirmButton=document.getElementById('workbenchConfirmButton');if(confirmButton)confirmButton.classList.toggle('hidden',order.status!=='WAITING_CONFIRMATION');const oldHint=document.getElementById('wbEmptyHint');if(oldHint)oldHint.remove();if(!data.project_id){wbClearEditor();const ov=document.getElementById('workbenchOverview');const h=document.createElement('div');h.id='wbEmptyHint';h.className='empty-workbench';h.textContent='这张单还没有 Codex 草稿。请先加载批次草稿后再查看。';ov.prepend(h);box.classList.remove('hidden');renderOrders();return}renderData(data);const issueGroups=workbenchIssueGroups(order,data);const wbWarn=document.getElementById('workbenchWarnings');if(wbWarn)wbWarn.innerHTML=renderIssueSection('必须修正的问题',issueGroups.required,'required','暂无；当前草稿可设为可执行。')+renderIssueSection('可能存在的问题',issueGroups.possible,'possible','暂无额外风险提示。');box.classList.remove('hidden');renderOrders()}
+async function openWorkbench(orderId){
+  try{
+    const result=await api('/api/orders/'+encodeURIComponent(orderId));
+    workbenchOrder=result.order;
+    renderWorkbench();
+    // 当前单据工作台与执行进度必须始终显示同一张单。
+    bindRunPanel(orderId,false);
+    document.getElementById('batchWorkbench').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(error){showUiToast('无法加载该单草稿：'+error.message)}
+}
+function collapseWorkbench(){workbenchOrder=null;const box=document.getElementById('batchWorkbench');if(box)box.classList.add('hidden');renderOrders()}
+function wbClearEditor(){
+  ['giftTable','parttimeDetailTable','otherTable','playerTable','interfaceTable','parttimePayeeTable'].forEach(id=>{const tb=document.querySelector('#'+id+' tbody');if(tb)tb.innerHTML=''});
+  ['project_id','cost_center','budget_owner','expense_note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  ['screenshot_required','fanbao_series','fanbao_type','test_form','cycle'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=(el.querySelector('option')||{}).value||''});
+  ['summary','payeeSummary','checks','workbenchWarnings'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=''});
+  const jsonbox=document.getElementById('jsonbox');if(jsonbox)jsonbox.textContent='';
+}
+async function wbSaveDraft(){
+  if(!workbenchOrder){showUiToast('请先选择一张单据');return}
+  if(!currentBatchId){showUiToast('未找到当前批次');return}
+  rebuildPreview();
+  const bad=validateData(curData).filter(x=>x.level==='err');
+  if(bad.length&&!confirm('当前草稿仍有 '+bad.length+' 项必须修正的校验问题：\n- '+bad.map(x=>x.text).join('\n- ')+'\n\n仍要保存覆盖吗？'))return;
+  if(!confirm('将当前编辑内容保存为标准 JSON 并覆盖批次草稿 codex_draft.json？\n保存后该单状态将回到“待确认”。'))return;
+  try{
+    const d=await api('/api/batches/'+encodeURIComponent(currentBatchId)+'/orders/'+encodeURIComponent(workbenchOrder.order_id)+'/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:curData})});
+    await selectBatch();
+    await openWorkbench(workbenchOrder.order_id);
+    showUiToast('✅ 已保存并覆盖草稿文件');
+  }catch(e){showUiToast('保存失败：'+e.message)}
+}
+function openJsonEditor(){
+
+  selectWorkbenchTab('json');
+  const editor=document.getElementById('workbenchJsonEditor');
+  if(editor){editor.focus();editor.scrollIntoView({behavior:'smooth',block:'nearest'})}
+  showUiToast('可在下方 JSON 文本框中修改，修改后点“保存为 JSON 文件”即可覆盖批次草稿');
+}
+function selectWorkbenchTab(tab){
+document.querySelectorAll('#workbenchTabs [data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));const map={overview:'workbenchOverview',expenses:'workbenchExpenses',payees:'workbenchPayees',checks:'workbenchChecks',json:'workbenchJson'};Object.entries(map).forEach(([key,id])=>document.getElementById(id).classList.toggle('active',key===tab))}
+function showUiToast(message){const toast=document.getElementById('uiToast');if(!toast)return;toast.textContent=message;toast.classList.remove('hidden');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.add('hidden'),3600)}
+async function controlOrder(action,orderId){const labels={pause:'暂停',resume:'继续',restart:'重新填报'};if(action==='restart'&&!confirm('确定重新填报这张单吗？将重新打开 EPC 并从第1页开始；不会自动删除 EPC 中已有页面或单据。'))return;try{const result=await api('/api/orders/'+encodeURIComponent(orderId)+'/'+action,{method:'POST'});const message=action==='pause'?'已请求暂停：脚本会在当前字段或当前费用模块完成后停住。':action==='resume'?'已请求继续执行。':`${labels[action]}指令已发送`;showUiToast(message);if(action==='restart')openRunPanel(result.run_id||orderId);else openRunPanel(orderId);await selectBatch();if(workbenchOrder?.order_id===orderId)await openWorkbench(orderId)}catch(error){showUiToast(`${labels[action]}失败：${error.message}`)}}
+function workbenchControl(action){if(!workbenchOrder){showUiToast('请先选择一张单据');return}if(action==='confirm'){if(workbenchOrder.status==='WAITING_CONFIRMATION')confirmOrder(workbenchOrder.order_id);else showUiToast('当前单据不处于待资料确认状态。');return}if(action==='start'){if(workbenchOrder.status==='READY'){startOrder(workbenchOrder.order_id)}else{showUiToast(`当前状态为“${STATUS_LABEL[workbenchOrder.status]||workbenchOrder.status}”，暂不能开始。`)}}else{controlOrder(action,workbenchOrder.order_id)}}
+async function createBatchFromInput(){const text=document.getElementById('batchInput').value.trim();if(!text){alert('请先在“多段文本”输入框粘贴内容');return}const d=await api('/api/batches',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});currentBatchId=d.batch.batch_id;document.getElementById('batchInput').value='';await refreshBatches();document.getElementById('batchSelect').value=currentBatchId;await selectBatch();document.getElementById('batchHint').innerHTML=`✅ 已创建批次 <b>${currentBatchId}</b>（${d.batch.orders.length} 张单）`}
+async function saveWorkbenchJson(){
+  if(!workbenchOrder){showUiToast('请先选择一张单据');return}
+  if(!currentBatchId){showUiToast('未找到当前批次');return}
+  const editor=document.getElementById('workbenchJsonEditor');
+  if(!editor){showUiToast('请先打开“标准 JSON”页签');return}
+  let data;
+  try{data=JSON.parse(editor.value)}catch(e){showUiToast('JSON 格式错误：'+e.message);return}
+  if(!data||typeof data!=='object'||Array.isArray(data)){showUiToast('JSON 必须是一个对象');return}
+  const bad=validateData(data).filter(x=>x.level==='err');
+  if(bad.length&&!confirm('当前草稿仍有 '+bad.length+' 项必须修正的校验问题：\n- '+bad.map(x=>x.text).join('\n- ')+'\n\n仍要保存覆盖吗？'))return;
+  if(!confirm('将当前修改保存为 JSON 文件并覆盖批次草稿 codex_draft.json？\n保存后该单状态将回到“待确认”。'))return;
+  try{
+    const d=await api('/api/batches/'+encodeURIComponent(currentBatchId)+'/orders/'+encodeURIComponent(workbenchOrder.order_id)+'/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data})});
+    await selectBatch();
+    await openWorkbench(workbenchOrder.order_id);
+    showUiToast('✅ 已保存并覆盖草稿文件');
+  }catch(e){showUiToast('保存失败：'+e.message)}
+}
+async function deleteCurrentBatch(){if(!currentBatchId){alert('请先选择要删除的批次');return}const orderCount=orderList.length;const ok=confirm(`确定删除批次 ${currentBatchId} 吗？\n\n将删除本地保存的 ${orderCount} 张单据、原始资料、Codex 草稿、日志和核验记录。\n已在 EPC 提交或已填写的页面不会被撤销。\n\n正在填写或等待确认的批次不能删除。`);if(!ok)return;try{const d=await api('/api/batches/'+encodeURIComponent(currentBatchId),{method:'DELETE'});const deletedId=currentBatchId;currentBatchId=null;orderList=[];runId=null;collapseWorkbench();await refreshBatches();document.getElementById('batchHint').innerHTML=`✅ 已删除批次 <b>${esc(deletedId)}</b>（${d.deleted_orders} 张单）`}catch(e){alert('删除失败：'+e.message)}}
+async function deleteOrder(orderId,projectId){if(!currentBatchId)return;const label=projectId||orderId;if(!confirm(`确定删除单据 ${label} 吗？\n\n将删除本地草稿、日志、核验记录及该单的 Codex 草稿条目；已在 EPC 填写的页面不会被撤销。\n\n执行中、暂停中或等待确认的单据不能删除。`))return;try{await api('/api/batches/'+encodeURIComponent(currentBatchId)+'/orders/'+encodeURIComponent(orderId),{method:'DELETE'});if(workbenchOrder?.order_id===orderId)collapseWorkbench();if(runId===orderId){if(pollTimer)clearTimeout(pollTimer);runId=null;document.getElementById('runCard')?.classList.add('hidden')}await selectBatch();showUiToast(`已删除单据 ${label}`)}catch(error){showUiToast('删除失败：'+error.message)}}
+async function addOrderToBatch(){if(!currentBatchId){alert('请先选择或创建批次');return}const text=document.getElementById('batchInput').value.trim();if(!text){alert('请在输入框粘贴该单据的原始内容');return}const m=text.match(PROJECT_ID_PATTERN);if(!m){alert('未识别到项目号。仅支持 字母+8位数字，末尾可带1个字母，例如 G26060703、S26070001 或 G26070035C。');return}await api('/api/batches/'+currentBatchId+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:m[1],source_text:text})});document.getElementById('batchInput').value='';await selectBatch()}
+async function saveBatchToCodex(){if(!currentBatchId){alert('请先选择批次');return}const d=await api('/api/batches/'+currentBatchId+'/save-input',{method:'POST'});document.getElementById('batchHint').innerHTML='✅ '+esc(d.message)}
+async function loadBatchDraft(){if(!currentBatchId){alert('请先选择批次');return}const d=await api('/api/batches/'+currentBatchId+'/draft');orderList=d.orders;renderOrders();renderBatchSummary();document.getElementById('batchHint').innerHTML=d.draft_found?`✅ 已加载批次草稿：${orderList.filter(o=>o.status==='READY').length} 张可执行，${orderList.filter(o=>o.status==='WAITING_CONFIRMATION').length} 张待确认`:'ℹ️ 尚未找到批次草稿（请先在 Codex 完成解析并写入 codex_draft.json）'}
+async function refreshOrders(){if(!currentBatchId){showUiToast('请先选择批次');return}const count=orderList.length;if(!confirm(`重置当前批次 ${currentBatchId} 吗？\n\n将停止本地自动化、清空全部执行日志/核验结果/自动截图，并把有草稿的 ${count} 张单据恢复为“可执行”。\n\n不会撤销 EPC 页面中已填写的内容。`))return;try{const result=await api('/api/batches/'+encodeURIComponent(currentBatchId)+'/reset-execution',{method:'POST'});if(pollTimer)clearTimeout(pollTimer);runId=null;document.getElementById('runCard')?.classList.add('hidden');collapseWorkbench();await selectBatch();showUiToast(`已重置 ${result.orders} 张单，其中 ${result.ready_orders} 张恢复为可执行`)}catch(error){showUiToast('重置失败：'+error.message)}}
+function refreshAllWorkbench(){if(currentBatchId)sessionStorage.setItem('epc_refresh_batch',currentBatchId);if(workbenchOrder?.order_id)sessionStorage.setItem('epc_refresh_order',workbenchOrder.order_id);if(runId)sessionStorage.setItem('epc_refresh_run',runId);window.location.reload()}
+async function refreshCurrentOrder(){if(!workbenchOrder){showUiToast('请先打开一张单据的工作台');return}const orderId=workbenchOrder.order_id;const result=await api('/api/orders/'+encodeURIComponent(orderId));workbenchOrder=result.order;const index=orderList.findIndex(order=>order.order_id===orderId);if(index>=0)orderList[index]=result.order;renderWorkbench();renderOrders();renderBatchSummary();bindRunPanel(orderId,false);showUiToast('已强制刷新本单：'+new Date().toLocaleTimeString())}
+async function confirmOrder(id){const order=orderList.find(item=>item.order_id===id)||workbenchOrder;const label=order?.project_id||id;if(!confirm(`确认 ${label} 的草稿资料无误，并设为可执行吗？\n\n橙色提示为需要你知悉的风险；如存在必须修正的问题，系统会阻止确认。`))return;try{await api('/api/orders/'+encodeURIComponent(id)+'/confirm',{method:'POST'});document.getElementById('batchHint').innerHTML=`✅ ${esc(label)} 已确认可执行，可以开始填报`;await selectBatch();if(workbenchOrder?.order_id===id)await openWorkbench(id);showUiToast(`${label} 已设为可执行`)}catch(e){showUiToast('确认失败：'+e.message)}}
+function editOrder(id){window.location.href='/single?order_id='+encodeURIComponent(id)}
+function clearOrderEdit(){window.location.href='/single'}
+async function loadSingleOrder(id){const d=await api('/api/orders/'+id);const o=d.order;if(!o.draft||!o.draft.project_id){alert('该单据还没有草稿，请先加载批次草稿');return}selectedOrderId=id;renderData(o.draft);const h=document.getElementById('orderEditHint');if(h){h.classList.remove('hidden');h.innerHTML=`当前编辑批次单据：<b>${esc(id)}</b>（${esc(o.project_id)}）　<button class="ghost small" onclick="clearOrderEdit()">返回新的单笔提报</button>`}}
+function bindRunPanel(id,scrollToPanel){
+  if(pollTimer)clearTimeout(pollTimer);
+  pollGeneration++;
+  runId=id;
+  payeeReviewSig='';
+  const card=document.getElementById('runCard');
+  if(!card)return;
+  card.classList.remove('hidden');
+  document.getElementById('runTitle').textContent='｜'+id;
+  document.getElementById('runStatus').innerHTML='⏳ 正在读取 '+esc(id)+' 的运行状态…';
+  log.innerHTML='';
+  shots.innerHTML='';
+  waitBox.classList.add('hidden');
+  payeeReviewBox.classList.add('hidden');
+  if(scrollToPanel)card.scrollIntoView({behavior:'smooth'});
+  poll(id, pollGeneration);
+}
+function openRunPanel(id){bindRunPanel(id,true)}
+async function clearRunHistory(){if(!runId){showUiToast('请先打开一张单据的执行进度');return}if(!confirm('清除本单的执行日志、核验结果和自动截图缓存吗？\n\n不会删除草稿或 JSON；正在填写、暂停或等待确认的单据不能清除。'))return;try{await api('/api/orders/'+encodeURIComponent(runId)+'/history',{method:'DELETE'});log.innerHTML='';shots.innerHTML='';payeeReviewBox.classList.add('hidden');verificationReviewBox.classList.add('hidden');proxyReviewBox.classList.add('hidden');waitBox.classList.add('hidden');runStatus.innerHTML='<span class="ok">✅ 已清除本单执行记录</span>';if(currentBatchId)await selectBatch();showUiToast('已清除本单执行记录')}catch(error){showUiToast('清除失败：'+error.message)}}
+function renderWaitActions(waiting){
+  const text=String(waiting||'');
+  const reverify=text.includes('收款人核验异常');
+  const complete=text.includes('收款人填写及金额核验已通过');
+  document.getElementById('waitReverifyButton')?.classList.toggle('hidden',!reverify);
+  document.getElementById('waitCompleteButton')?.classList.toggle('hidden',!complete);
+  document.getElementById('waitYesButton')?.classList.toggle('hidden',reverify||complete);
+}
+async function startOrder(id){const d=await api('/api/orders/'+id+'/start',{method:'POST'});openRunPanel(d.run_id);await selectBatch()}
+async function startAllReady(){
+  if(!currentBatchId){showUiToast('请先选择批次');return}
+  const ready=orderList.filter(o=>o.status==='READY');
+  if(!ready.length){
+    document.getElementById('batchHint').innerHTML='⚠ 当前批次没有“可执行”单据；请先处理待确认/待修正单据。';
+    return;
+  }
+  const button=document.querySelector('button[onclick="startAllReady()"]');
+  if(button)button.disabled=true;
+  document.getElementById('batchHint').innerHTML=`⏳ 正在启动 ${ready.length} 张可执行单据…`;
+  const started=[],failed=[];
+  for(const order of ready){
+    try{
+      const result=await api('/api/orders/'+encodeURIComponent(order.order_id)+'/start',{method:'POST'});
+      started.push(result.run_id||order.order_id);
+    }catch(error){
+      failed.push({orderId:order.order_id,message:error.message||String(error)});
+    }
+  }
+  await selectBatch();
+  if(button)button.disabled=false;
+  const successText=started.length?`✅ 已启动 ${started.length} 张：${started.map(esc).join('、')}`:'⚠ 没有单据成功启动';
+  const failText=failed.length?`<br>❌ 启动失败：${failed.map(item=>`${esc(item.orderId)}（${esc(item.message)}）`).join('；')}`:'';
+  document.getElementById('batchHint').innerHTML=successText+failText;
+  if(started.length)openRunPanel(started[0]);
+}
+async function retryOrder(id){try{const d=await api('/api/orders/'+id+'/retry',{method:'POST'});alert(d.order.order_id+' 已重置');await selectBatch()}catch(e){alert(e.message)}}
+async function restartInterruptedOrder(id){const ok=confirm('该单的自动填写已因服务重启而中断，不能直接接回原任务。\n\n重新开始会从头打开并填写这张单；请先确认 EPC 中是否有需要手动关闭或保留的旧页面。\n\n确定重新开始吗？');if(!ok)return;await controlOrder('restart',id)}
+
+async function reloadDraft(){const r=await fetch('/draft');const d=await r.json();if(d.ok&&d.data)renderData(d.data);else alert('后端暂无草稿')}
+function currentMetaForAi(){return{project_id:project_id.value.trim(),cost_center:cost_center.value.trim(),budget_owner:budget_owner.value.trim(),fanbao_series:fanbao_series.value,fanbao_type:fanbao_type.value,test_form:test_form.value,cycle:cycle.value,screenshot_required:screenshot_required.value==='true'}}
+async function saveForCodex(){const text=rawInput.value.trim();if(!text){alert('请先粘贴原始表格');return}const r=await fetch('/pending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,meta:currentMetaForAi()})});const d=await r.json();pendingHint.innerHTML=d.ok?'✅ 已保存给 Codex：<b>pending_input.json</b>。请回到 Codex 输入：<b>解析刚保存的这单</b>':'❌ 保存失败：'+esc(d.error||'未知错误')}
+async function parseWithLocal(){const text=rawInput.value.trim();if(!text){alert('请先粘贴原始表格');return}const r=await fetch('/parse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});const d=await r.json();const g=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:d.meta||{},players:d.players||[],interfaces:d.interfaces||[],parttime:d.parttime||[]})});renderData(await g.json())}
+async function aiDraft(){alert('AIGW 额度不足时不可用，当前推荐用“保存给 Codex 解析”。')}
+function loadExample(){rawInput.value=`G26070046C\\n玩家\\t礼金\\t交补\\n张三\\t13000000000\\t150\\t50\\n转介\\n黄蔚\\t2\\t100`}
+async function doSave(){rebuildPreview();if(selectedOrderId){const d=await api('/api/orders/'+selectedOrderId+'/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:curData})});alert('已保存到单据：'+d.order.order_id)}else{const r=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(curData)});const d=await r.json();alert('已保存：'+d.file)}}
+async function doRun(){rebuildPreview();const bad=validateData(curData).filter(x=>x.level==='err');if(bad.length&&!confirm('仍有错误校验项，确定继续？'))return;if(!confirm('确认启动自动填表？'))return;let d;if(selectedOrderId){const s=await fetch('/api/orders/'+selectedOrderId+'/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:curData})});const sj=await s.json();if(!sj.ok){alert('保存草稿失败：'+sj.error);return}d={run_id:selectedOrderId};await api('/api/orders/'+selectedOrderId+'/start',{method:'POST'})}else{const r=await fetch('/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(curData)});d=await r.json()}runId=d.run_id;runCard.classList.remove('hidden');document.getElementById('runTitle').textContent='｜'+(selectedOrderId||'');runCard.scrollIntoView({behavior:'smooth'});poll()}
+function renderPayeeReviewBase(review){const rows=review?.platform_extra||[];if(!rows.length){payeeReviewBox.classList.add('hidden');payeeReviewSig='';return}const sig=JSON.stringify(rows.map(r=>[r.name,r.phone,r.reason]));payeeReviewBox.classList.remove('hidden');if(sig===payeeReviewSig)return;const old={};payeeReviewTable.querySelectorAll('tbody select').forEach(s=>{old[(s.dataset.name||'')+'|'+(s.dataset.phone||'')]=s.value});payeeReviewSig=sig;payeeReviewTable.querySelector('tbody').innerHTML=rows.map(r=>{const key=(r.name||'')+'|'+(r.phone||'');const action=old[key]||r.action||'keep';return `<tr><td>${esc(r.name)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.reason||'平台多余')}</td><td><select data-name="${esc(r.name)}" data-phone="${esc(r.phone||'')}"><option value="keep" ${action==='keep'?'selected':''}>保留</option><option value="delete" ${action==='delete'?'selected':''}>删除</option></select></td></tr>`}).join('')}
+async function submitPayeeReview(){const items=Array.from(payeeReviewTable.querySelectorAll('tbody select')).map(s=>({name:s.dataset.name,phone:s.dataset.phone,action:s.value}));payeeReviewBox.classList.add('hidden');payeeReviewSig='';await sendResp({platform_extra:items})}
+function toggleKeptExtraRow(select){const row=select.closest('tr');const keep=select.value==='keep';row.querySelectorAll('.keep-detail').forEach(el=>{el.disabled=!keep;el.classList.toggle('hidden',!keep)})}
+function toggleAliasAssociation(input){const platform=input.dataset.platform||'',phone=input.dataset.phone||'';const row=Array.from(payeeReviewTable.querySelectorAll('tbody tr')).find(item=>{const select=item.querySelector('.extra-action');return select&&select.dataset.name===platform&&select.dataset.phone===phone});if(!row)return;const select=row.querySelector('.extra-action');if(input.checked){select.value='associate';select.disabled=true;row.querySelectorAll('.keep-detail').forEach(el=>{el.disabled=true;el.classList.add('hidden')});row.classList.add('alias-associated')}else{select.disabled=false;select.value='delete';row.classList.remove('alias-associated');toggleKeptExtraRow(select)}}
+function renderPayeeReview(review){const rows=review?.platform_extra||[];const proxyIssues=review?.proxy_issues||[];if(!rows.length&&!proxyIssues.length){payeeReviewBox.classList.add('hidden');proxyReviewBox?.classList.add('hidden');payeeReviewSig='';return}const sig=JSON.stringify({rows:rows.map(r=>[r.name,r.phone,r.reason,r.action,r.type,r.amount]),proxyIssues});payeeReviewBox.classList.remove('hidden');if(sig!==payeeReviewSig){payeeReviewSig=sig;payeeReviewTable.querySelector('tbody').innerHTML=rows.map(r=>{const action=r.action||'delete';const type=r.type||'玩家';const amount=r.amount??'';const keep=action==='keep';return `<tr><td>${esc(r.name)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.reason||'平台多余')}</td><td><select class="extra-action" data-name="${esc(r.name)}" data-phone="${esc(r.phone||'')}" onchange="toggleKeptExtraRow(this)"><option value="delete" ${action==='delete'?'selected':''}>删除</option><option value="keep" ${keep?'selected':''}>保留</option></select></td><td><select class="keep-detail extra-type ${keep?'':'hidden'}" ${keep?'':'disabled'}><option value="玩家" ${type==='玩家'?'selected':''}>玩家</option><option value="渠道接口人" ${type==='渠道接口人'?'selected':''}>渠道接口人</option><option value="兼职" ${type==='兼职'?'selected':''}>兼职</option></select></td><td><input class="keep-detail extra-amount ${keep?'':'hidden'}" ${keep?'':'disabled'} type="number" min="0" step="0.01" value="${esc(amount)}" placeholder="金额"></td></tr>`}).join('')}if(proxyIssues.length){proxyReviewBox.classList.remove('hidden');proxyReviewBox.innerHTML=`<b>代收关系异常</b><ul>${proxyIssues.map(i=>`<li>${esc(i.message||i.reason||JSON.stringify(i))}</li>`).join('')}</ul>`}else{proxyReviewBox.classList.add('hidden');proxyReviewBox.innerHTML=''}}
+async function submitPayeeReview(){const items=[];for(const row of Array.from(payeeReviewTable.querySelectorAll('tbody tr'))){const action=row.querySelector('.extra-action').value;const item={name:row.querySelector('.extra-action').dataset.name,phone:row.querySelector('.extra-action').dataset.phone,action};if(action==='keep'){item.type=row.querySelector('.extra-type').value;item.amount=n(row.querySelector('.extra-amount').value);if(!item.type||item.amount<=0){alert('选择保留的平台多余人员必须填写身份和大于 0 的金额');return}}items.push(item)}payeeReviewBox.classList.add('hidden');payeeReviewSig='';await sendResp({platform_extra:items,proxy_issues_acknowledged:true})}
+const _basePayeeReview=renderPayeeReviewBase;
+function renderPayeeReview(review){
+  _basePayeeReview(review);
+  const fieldIssues=review?.platform_field_issues||[];
+  if(!fieldIssues.length)return;
+  payeeReviewBox.classList.remove('hidden');
+  proxyReviewBox.classList.remove('hidden');
+  const prior=proxyReviewBox.innerHTML||'';
+  proxyReviewBox.innerHTML=prior+`<b>平台字段校验问题</b><ul>${fieldIssues.map(i=>`<li>${esc(i.name||'未命名人员')}：${esc(i.field||'字段')} ${esc(i.message||'填写异常')}（第${esc(i.page||'?')}页）</li>`).join('')}</ul>`;
+}
+// 覆盖历史兼容函数：审核表统一使用六列表格，保留时显示身份和金额。
+renderPayeeReview = function(review){
+  const rows=review?.platform_extra||[];
+  const proxyIssues=review?.proxy_issues||[];
+  const fieldIssues=review?.platform_field_issues||[];
+  if(!rows.length&&!proxyIssues.length&&!fieldIssues.length){
+    payeeReviewBox.classList.add('hidden');
+    proxyReviewBox?.classList.add('hidden');
+    payeeReviewSig='';
+    return;
+  }
+  const sig=JSON.stringify({rows:rows.map(r=>[r.name,r.phone,r.reason,r.action,r.type,r.amount]),proxyIssues,fieldIssues});
+  payeeReviewBox.classList.remove('hidden');
+  if(sig!==payeeReviewSig){
+    payeeReviewSig=sig;
+    payeeReviewTable.querySelector('tbody').innerHTML=rows.map(r=>{
+      const action=r.action||'delete';
+      const type=r.type||'玩家';
+      const amount=r.amount??'';
+      const keep=action==='keep';
+      return `<tr><td>${esc(r.name)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.reason||'平台多余')}</td><td><select class="extra-action" data-name="${esc(r.name)}" data-phone="${esc(r.phone||'')}" onchange="toggleKeptExtraRow(this)"><option value="delete" ${action==='delete'?'selected':''}>删除</option><option value="keep" ${keep?'selected':''}>保留</option><option value="associate">关联为同一人（不删除）</option></select></td><td><select class="keep-detail extra-type ${keep?'':'hidden'}" ${keep?'':'disabled'}><option value="玩家" ${type==='玩家'?'selected':''}>玩家</option><option value="渠道接口人" ${type==='渠道接口人'?'selected':''}>渠道接口人</option><option value="兼职" ${type==='兼职'?'selected':''}>兼职</option></select></td><td><input class="keep-detail extra-amount ${keep?'':'hidden'}" ${keep?'':'disabled'} type="number" min="0" step="0.01" value="${esc(amount)}" placeholder="金额"></td></tr>`;
+    }).join('');
+  }
+  const notices=[
+    ...proxyIssues.map(item=>item.message||item.reason||JSON.stringify(item)),
+    ...fieldIssues.map(item=>`${item.name||'未命名人员'}：${item.field||'字段'} ${item.message||'填写异常'}（第${item.page||'?'}页）`),
+  ];
+  if(notices.length){
+    proxyReviewBox.classList.remove('hidden');
+    proxyReviewBox.innerHTML=`<b>需要处理的问题</b><ul>${notices.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`;
+  }else{
+    proxyReviewBox.classList.add('hidden');
+    proxyReviewBox.innerHTML='';
+  }
+};
+submitPayeeReview = async function(){
+  const items=[];
+  for(const row of Array.from(payeeReviewTable.querySelectorAll('tbody tr'))){
+    const action=row.querySelector('.extra-action').value;
+    const item={name:row.querySelector('.extra-action').dataset.name,phone:row.querySelector('.extra-action').dataset.phone,action};
+    if(action==='keep'){
+      item.type=row.querySelector('.extra-type').value;
+      item.amount=n(row.querySelector('.extra-amount').value);
+      if(!item.type||item.amount<=0){alert('选择保留的平台多余人员必须填写身份和大于 0 的金额');return}
+    }
+    items.push(item);
+  }
+  payeeReviewBox.classList.add('hidden');
+  payeeReviewSig='';
+  await sendResp({platform_extra:items,proxy_issues_acknowledged:true});
+};
+// 最终审核界面：平台多余人员 + 核验差异均可在前端逐行修改。
+renderPayeeReview = function(review){
+  const extras=review?.platform_extra||[];
+  const missing=review?.missing||[];
+  const possibleMatches=review?.possible_matches||[];
+  const issues=review?.verification_issues||[];
+  const allowManualTotalAcceptance=review?.allow_manual_total_acceptance===true;
+  const proxyIssues=review?.proxy_issues||[];
+  const fieldIssues=review?.platform_field_issues||[];
+  const isRosterPrecheck=!issues.length&&!fieldIssues.length;
+  if(!extras.length&&!missing.length&&!possibleMatches.length&&!issues.length&&!proxyIssues.length&&!fieldIssues.length){
+    payeeReviewBox.classList.add('hidden');
+    verificationReviewBox.classList.add('hidden');
+    proxyReviewBox.classList.add('hidden');
+    payeeReviewSig='';
+    return;
+  }
+  const sig=JSON.stringify({extras,missing,possibleMatches,issues,proxyIssues,fieldIssues});
+  payeeReviewBox.classList.remove('hidden');
+  const reviewTitle=document.getElementById('payeeReviewTitle');
+  const reviewSubmitButton=document.getElementById('payeeReviewSubmitButton');
+  if(reviewTitle)reviewTitle.textContent=isRosterPrecheck?'名单预核对：请确认 EPC 多余、缺失或代收相关人员；确认后才开始填写已匹配人员。':'收款人回读核验异常：可在下方修改后由脚本写回 EPC，或先在 EPC 手动修改再点“已修正，重新核验”。';
+  if(reviewSubmitButton)reviewSubmitButton.textContent=isRosterPrecheck?'确认名单处理并继续填写':'应用修正并重新核验';
+  if(sig!==payeeReviewSig){
+    payeeReviewSig=sig;
+    payeeReviewTable.querySelector('tbody').innerHTML=extras.map(r=>{
+      const action=r.action||'delete', type=r.type||'玩家', amount=r.amount??'', keep=action==='keep';
+      return `<tr><td>${esc(r.name)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.reason||'平台多余')}</td><td><select class="extra-action" data-name="${esc(r.name)}" data-phone="${esc(r.phone||'')}" onchange="toggleKeptExtraRow(this)"><option value="delete" ${action==='delete'?'selected':''}>删除</option><option value="keep" ${keep?'selected':''}>保留</option></select></td><td><select class="keep-detail extra-type ${keep?'':'hidden'}" ${keep?'':'disabled'}><option value="玩家" ${type==='玩家'?'selected':''}>玩家</option><option value="渠道接口人" ${type==='渠道接口人'?'selected':''}>渠道接口人</option><option value="兼职" ${type==='兼职'?'selected':''}>兼职</option></select></td><td><input class="keep-detail extra-amount ${keep?'':'hidden'}" ${keep?'':'disabled'} type="number" min="0" step="0.01" value="${esc(amount)}" placeholder="金额"></td></tr>`;
+    }).join('');
+    const editableIssues=issues.filter(i=>!['extra_in_epc','total_amount_mismatch'].includes(i.result));
+    const totalIssues=issues.filter(i=>i.result==='total_amount_mismatch');
+    verificationReviewBox.classList.toggle('hidden',!editableIssues.length&&!totalIssues.length);
+    verificationReviewBox.innerHTML=(editableIssues.length?`<h3 style="margin:10px 0 6px;">收款人核验差异</h3><div class="muted" style="margin:0 0 8px;">身份和金额可由脚本写回 EPC；支付宝登录号/实名请在 EPC 右侧“编辑”中手动保存，完成后点“已修正，重新核验”。</div><table><thead><tr><th>人员</th><th>问题</th><th>应填类型</th><th>实际类型</th><th>应填金额</th><th>实际金额</th><th>修正类型</th><th>修正金额</th><th>支付宝登录号</th><th>支付宝实名</th><th>处理</th></tr></thead><tbody>${editableIssues.map(i=>{const manual=['missing_in_epc','alipay_login_missing','alipay_real_name_missing'].includes(i.result);const hasRedName=Array.isArray(i.platform_errors)&&i.platform_errors.some(message=>String(message).includes('真实姓名显示红色'));const issueLabel=hasRedName?'实名信息有误（EPC 红名）':({missing_in_epc:'EPC 未找到',duplicate_in_epc:'重复匹配',type_mismatch:'身份不一致',amount_mismatch:'金额不一致',phone_mismatch:'手机号不一致',alipay_login_missing:'支付宝登录号为空',alipay_real_name_missing:'支付宝实名为空',platform_validation_error:'页面红色错误'}[i.result]||i.result);const alipayIssue=['alipay_login_missing','alipay_real_name_missing'].includes(i.result);return `<tr class="verification-row" data-issue-key="${esc(i.issue_key||'')}" data-payee-id="${esc(i.payee_id||'')}" data-name="${esc(i.name||'')}" data-phone="${esc(i.phone||'')}" data-actual-name="${esc(i.actual_name||'')}" data-actual-phone="${esc(i.actual_phone||'')}" data-result="${esc(i.result||'')}"><td>${esc(i.name||i.actual_name||'—')}</td><td>${esc(issueLabel)}${i.platform_errors?.length?`：${esc(i.platform_errors.join('；'))}`:''}</td><td>${esc(i.type||'—')}</td><td>${esc(i.actual_type||'—')}</td><td>${esc(i.expected_amount??'—')}</td><td>${esc(i.actual_amount??'—')}</td><td>${manual?(alipayIssue?'需在 EPC 编辑':'需人工新增'):`<select class="fix-type"><option value="玩家" ${(i.type||'玩家')==='玩家'?'selected':''}>玩家</option><option value="渠道接口人" ${i.type==='渠道接口人'?'selected':''}>渠道接口人</option><option value="兼职" ${i.type==='兼职'?'selected':''}>兼职</option></select>`}</td><td>${manual?'—':`<input class="fix-amount" type="number" min="0" step="0.01" value="${esc(i.expected_amount??i.actual_amount??'')}">`}</td><td>${alipayIssue?'EPC 手动填写':(manual?'—':`<input class="fix-alipay-login" value="${esc(i.actual_alipay_login??'')}" placeholder="支付宝登录号">`)}</td><td>${alipayIssue?'EPC 手动填写':(manual?'—':`<input class="fix-alipay-name" value="${esc(i.actual_alipay_name??'')}" placeholder="支付宝实名">`)}</td><td><label class="muted"><input class="ignore-issue" type="checkbox"> 忽略本条</label></td></tr>`}).join('')}</tbody></table>`:'')+(totalIssues.length?`<div class="attention"><b>总金额对账异常</b><ul>${totalIssues.map(i=>`<li>费用明细应报 <b>${esc(i.expected_amount)}</b> 元，EPC 收款人实际合计 <b>${esc(i.actual_amount)}</b> 元，差额 <b>${esc((Number(i.actual_amount||0)-Number(i.expected_amount||0)))}</b> 元。</li>`).join('')}</ul>${allowManualTotalAcceptance?`<label><input id="acceptManualTotalMismatch" type="checkbox"> 我确认上述总额差异来自人工保留人员，保留人员优先，不回滚删除，直接继续当前单。</label>`:`<label class="muted"><input class="ignore-issue" type="checkbox" data-issue-key="${esc(totalIssues[0]?.issue_key||'')}"> 我确认该总额异常已在 EPC 中处理，忽略本条并继续。</label>`}</div>`:'');
+  }
+  const selectedAssociations=new Set(Array.from(proxyReviewBox.querySelectorAll('.alias-association:checked')).map(input=>`${input.dataset.source}|${input.dataset.platform}|${input.dataset.phone}`));
+  const associationHtml=isRosterPrecheck&&possibleMatches.length?`<div class="attention" style="margin:0 0 10px;background:#eef6ff;border-color:#b9d7ff;"><b>疑似同一人（仅建议，须由你确认）</b><div class="muted" style="margin:5px 0 7px;">勾选后会把 EPC 人员关联到 JSON 人员：该 EPC 人员不会删除，也不会按“保留”处理；后续填写和回读均按同一人处理。</div>${possibleMatches.map(item=>{const key=`${item.source_name}|${item.platform_name}|${item.phone||''}`;const basis=item.matched_candidate&&item.matched_candidate!==item.source_name?`${item.matched_candidate} ↔ ${item.platform_name}；${item.reason||'姓名相似'}`:(item.reason||'姓名相似');return `<label style="display:block;padding:6px 0;border-top:1px dashed #d4e3f7;"><input class="alias-association" type="checkbox" data-source="${esc(item.source_name)}" data-platform="${esc(item.platform_name)}" data-phone="${esc(item.phone||'')}" data-reason="${esc(basis)}" onchange="toggleAliasAssociation(this)" ${selectedAssociations.has(key)?'checked':''}> 将 EPC 的 <b>${esc(item.platform_name)}</b> 关联为 JSON 的 <b>${esc(item.source_name)}</b> <span class="muted">（${esc(basis)}，置信度 ${esc(item.score||'—')}）</span></label>`}).join('')}</div>`:'';
+  const notices=[
+    ...missing.map(item=>`草稿有但 EPC 未匹配：${item.name||'未命名人员'}。请先检查“平台多余人员”中是否存在别名、代收人或错别字对应项；未确认前不要删除。`),
+    ...proxyIssues.map(i=>i.message||i.reason||JSON.stringify(i)),
+    ...fieldIssues.map(i=>`${i.name||'未命名人员'}：${i.field||'字段'} ${i.message||'填写异常'}（第${i.page||'?'}页）`),
+  ];
+  if(notices.length||associationHtml){proxyReviewBox.classList.remove('hidden');proxyReviewBox.innerHTML=associationHtml+(notices.length?`<b>需要人工处理的问题</b><ul>${notices.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'');Array.from(proxyReviewBox.querySelectorAll('.alias-association:checked')).forEach(toggleAliasAssociation)}else{proxyReviewBox.classList.add('hidden');proxyReviewBox.innerHTML=''};
+};
+submitPayeeReview = async function(){
+  const platformExtra=[];
+  for(const row of Array.from(payeeReviewTable.querySelectorAll('tbody tr'))){
+    const action=row.querySelector('.extra-action').value;
+    const item={name:row.querySelector('.extra-action').dataset.name,phone:row.querySelector('.extra-action').dataset.phone,action};
+    if(action==='keep'){item.type=row.querySelector('.extra-type').value;item.amount=n(row.querySelector('.extra-amount').value);if(!item.type||item.amount<=0){alert('选择保留的平台多余人员必须填写身份和大于 0 的金额');return}}
+    platformExtra.push(item);
+  }
+  const aliasAssociations=Array.from(proxyReviewBox.querySelectorAll('.alias-association:checked')).map(input=>({source_name:input.dataset.source,platform_name:input.dataset.platform,phone:input.dataset.phone,reason:input.dataset.reason}));
+  for(const association of aliasAssociations){const row=platformExtra.find(item=>item.name===association.platform_name&&item.phone===association.phone);if(row){row.action='associate';row.target_name=association.source_name}}
+  const corrections=[];
+  const ignoredIssueKeys=[];
+  for(const row of Array.from(verificationReviewBox.querySelectorAll('.verification-row'))){
+    if(row.querySelector('.ignore-issue')?.checked){if(row.dataset.issueKey)ignoredIssueKeys.push(row.dataset.issueKey);continue}
+    if(['missing_in_epc','alipay_login_missing','alipay_real_name_missing'].includes(row.dataset.result))continue;
+    corrections.push({payee_id:row.dataset.payeeId,name:row.dataset.name,phone:row.dataset.phone,actual_name:row.dataset.actualName,actual_phone:row.dataset.actualPhone,result:row.dataset.result,action:'apply',type:row.querySelector('.fix-type')?.value,amount:n(row.querySelector('.fix-amount')?.value),alipay_login:row.querySelector('.fix-alipay-login')?.value.trim(),alipay_name:row.querySelector('.fix-alipay-name')?.value.trim()});
+  }
+  verificationReviewBox.querySelectorAll('.ignore-issue[data-issue-key]:checked').forEach(input=>{if(input.dataset.issueKey)ignoredIssueKeys.push(input.dataset.issueKey)});
+  payeeReviewBox.classList.add('hidden');
+  verificationReviewBox.classList.add('hidden');
+  payeeReviewSig='';
+  const acceptTotalMismatch=!!document.getElementById('acceptManualTotalMismatch')?.checked;
+  await sendResp({platform_extra:platformExtra,alias_associations:aliasAssociations,verification_corrections:corrections,ignored_issue_keys:[...new Set(ignoredIssueKeys)],accept_total_mismatch:acceptTotalMismatch,proxy_issues_acknowledged:true});
+};
+function poll(targetId=runId, generation=pollGeneration){
+  if(!targetId || targetId!==runId || generation!==pollGeneration)return;
+  if(pollTimer)clearTimeout(pollTimer);
+  const batchMode=PAGE_MODE==='batch';
+  const endpoint=batchMode?'/api/orders/'+encodeURIComponent(targetId)+'/status':'/status/'+encodeURIComponent(targetId);
+  fetch(endpoint).then(async r=>{
+    if(r.status===404)throw new Error(batchMode?'单据不存在或已删除':'当前任务已失效，请重新启动自动填表。');
+    if(!r.ok)throw new Error('状态查询失败：HTTP '+r.status);
+    return r.json();
+  }).then(s=>{
+    // 用户已经切换到另一张单，或上一轮请求后有新的轮询，丢弃旧响应。
+    if(targetId!==runId || generation!==pollGeneration)return;
+    if(batchMode && s.order && s.order.order_id!==targetId){
+      runStatus.innerHTML='<span class="err">⚠ 返回单据与当前面板不一致，已拒绝显示该响应。</span>';
+      return;
+    }
+    const clsMap={'prompt':'log-prompt','input':'log-input','error':'log-error','interrupted':'log-error'};
+    const entries=batchMode?((s.log&&s.log.length)?s.log:(s.events||[]).map(e=>[e.kind,e.message])):(s.log||[]);
+    log.innerHTML=entries.map(l=>`<div class="${clsMap[l[0]]||''}">${esc(l[1])}</div>`).join('');
+    log.scrollTop=log.scrollHeight;
+    shots.innerHTML=(s.screenshots||[]).map(f=>`<img src="/screenshot/${f}" onclick="window.open('/screenshot/${f}')">`).join('');
+    renderPayeeReview(s.payee_review);
+    if(s.waiting){waitBox.classList.remove('hidden');waitQ.textContent='⏸ '+s.waiting;renderWaitActions(s.waiting)}else{waitBox.classList.add('hidden');renderWaitActions('')}
+    if(batchMode&&s.interrupted){
+      runStatus.innerHTML=`<span class="err">⚠ ${esc(s.order.error||'自动填写已中断')} </span><button class="small" onclick="restartInterruptedOrder('${esc(targetId)}')">重新开始该单</button>`;
+      if(currentBatchId)selectBatch().catch(()=>{});
+      return;
+    }
+    const error=s.error||(batchMode?s.order?.error:'');
+    const done=batchMode?!s.running:s.done;
+    runStatus.innerHTML=error?`<span class="err">❌ ${esc(error)}</span>`:(done?'<span class="ok">✅ 当前任务已结束</span>':'⏳ 运行中...');
+    if(batchMode&&currentBatchId)selectBatch().catch(()=>{});
+    if(!done && targetId===runId && generation===pollGeneration)pollTimer=setTimeout(()=>poll(targetId,generation),800);
+  }).catch(e=>{
+    if(targetId!==runId || generation!==pollGeneration)return;
+    runStatus.innerHTML='<span class="err">⚠ '+esc(e.message||e)+'</span>';
+    pollTimer=null;
+  });
+}
+async function sendResp(v){const val=v!==undefined?v:waitInput.value;waitInput.value='';const endpoint=PAGE_MODE==='batch'?'/api/orders/'+encodeURIComponent(runId)+'/respond':'/respond/'+encodeURIComponent(runId);await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:val})})}
+if(document.getElementById('waitInput'))document.getElementById('waitInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendResp()});
+if(document.getElementById('expense_note'))document.getElementById('expense_note').addEventListener('input',()=>{noteEdited=true;if(curData){curData.expense_note=expense_note.value;jsonbox.textContent=JSON.stringify(curData,null,2)}});
+if(PAGE_MODE==='single'){if(INITIAL_ORDER_ID)loadSingleOrder(INITIAL_ORDER_ID);else reloadDraft();}
+if(PAGE_MODE==='batch'){const savedBatch=sessionStorage.getItem('epc_refresh_batch');const savedOrder=sessionStorage.getItem('epc_refresh_order');const savedRun=sessionStorage.getItem('epc_refresh_run');sessionStorage.removeItem('epc_refresh_batch');sessionStorage.removeItem('epc_refresh_order');sessionStorage.removeItem('epc_refresh_run');if(savedBatch)currentBatchId=savedBatch;refreshBatches().then(async()=>{if(savedOrder&&orderList.some(order=>order.order_id===savedOrder))await openWorkbench(savedOrder);if(savedRun&&orderList.some(order=>order.order_id===savedRun))openRunPanel(savedRun);showUiToast('已完成整体强制刷新：'+new Date().toLocaleTimeString())});setInterval(()=>{if(!runId&&currentBatchId)selectBatch().catch(()=>{})},1500);}
+</script>
+
+<script>
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    const demo = window.__portfolioDemo;
+    if (!demo) return;
+    try {
+      currentBatchId = demo.batchId;
+      orderList = demo.orders;
+      const select = document.getElementById("batchSelect");
+      if (select) {
+        select.innerHTML = `<option value="${demo.batchId}">${demo.batchId}（3单/READY）</option>`;
+        select.value = demo.batchId;
+      }
+      renderOrders();
+      renderBatchSummary();
+      const hint = document.getElementById("batchHint");
+      if (hint) hint.innerHTML = "静态 Demo：已加载 3 张脱敏单据。可点击“查看草稿”“开始”或下方工作台 tab 体验预设状态。";
+    } catch (error) {
+      console.error("portfolio static bootstrap failed", error);
+    }
+  }, 50);
+});
+</script>
+</body>
+</html>
